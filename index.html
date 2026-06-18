@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Игра: Крестики-Нолики</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1e1e24, #2a2b3d);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(255,255,255,0.2);
+        }
+
+        .status {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: #00ffcc;
+            min-height: 30px;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 10px;
+            background-color: #3f405c;
+            padding: 10px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+
+        .cell {
+            background-color: #252635;
+            border: none;
+            border-radius: 8px;
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cell:hover {
+            background-color: #2d2f44;
+            transform: scale(1.03);
+        }
+
+        /* Цвета для X и O */
+        .cell.x {
+            color: #ff4a5a;
+            text-shadow: 0 0 10px rgba(255, 74, 90, 0.5);
+        }
+
+        .cell.o {
+            color: #4a9eff;
+            text-shadow: 0 0 10px rgba(74, 158, 255, 0.5);
+        }
+
+        .cell.disabled {
+            cursor: not-allowed;
+        }
+
+        .btn-reset {
+            margin-top: 25px;
+            padding: 12px 30px;
+            font-size: 1rem;
+            font-weight: bold;
+            background-color: #00ffcc;
+            color: #1e1e24;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 255, 204, 0.3);
+        }
+
+        .btn-reset:hover {
+            background-color: #00ccaa;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 255, 204, 0.5);
+        }
+
+        .btn-reset:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Крестики-Нолики</h1>
+    <div class="status" id="status">Ход игрока: X</div>
+
+    <div class="board" id="board">
+        <button class="cell" data-cell-index="0"></button>
+        <button class="cell" data-cell-index="1"></button>
+        <button class="cell" data-cell-index="2"></button>
+        <button class="cell" data-cell-index="3"></button>
+        <button class="cell" data-cell-index="4"></button>
+        <button class="cell" data-cell-index="5"></button>
+        <button class="cell" data-cell-index="6"></button>
+        <button class="cell" data-cell-index="7"></button>
+        <button class="cell" data-cell-index="8"></button>
+    </div>
+
+    <button class="btn-reset" id="resetBtn">Начать заново</button>
+
+    <script>
+        const board = document.getElementById('board');
+        const cells = document.querySelectorAll('.cell');
+        const statusText = document.getElementById('status');
+        const resetBtn = document.getElementById('resetBtn');
+
+        // Выигрышные комбинации индексов
+        const winningConditions = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // Горизонтали
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // Вертикали
+            [0, 4, 8], [2, 4, 6]             // Диагонали
+        ];
+
+        let gameState = ["", "", "", "", "", "", "", "", ""];
+        let currentPlayer = "X";
+        let isGameActive = true;
+
+        // Обработка клика по ячейке
+        function handleCellClick(e) {
+            const clickedCell = e.target;
+            const clickedCellIndex = parseInt(clickedCell.getAttribute('data-cell-index'));
+
+            // Проверяем, занята ли ячейка или окончена ли игра
+            if (gameState[clickedCellIndex] !== "" || !isGameActive) {
+                return;
+            }
+
+            // Обновляем состояние игры и интерфейс
+            gameState[clickedCellIndex] = currentPlayer;
+            clickedCell.textContent = currentPlayer;
+            clickedCell.classList.add(currentPlayer.toLowerCase(), 'disabled');
+
+            checkResult();
+        }
+
+        // Проверка результатов игры
+        function checkResult() {
+            let roundWon = false;
+
+            for (let i = 0; i < winningConditions.length; i++) {
+                const winCondition = winningConditions[i];
+                let a = gameState[winCondition[0]];
+                let b = gameState[winCondition[1]];
+                let c = gameState[winCondition[2]];
+
+                if (a === '' || b === '' || c === '') {
+                    continue;
+                }
+                if (a === b && b === c) {
+                    roundWon = true;
+                    break;
+                }
+            }
+
+            if (roundWon) {
+                statusText.textContent = `🎉 Игрок ${currentPlayer} победил!`;
+                statusText.style.color = currentPlayer === 'X' ? '#ff4a5a' : '#4a9eff';
+                isGameActive = false;
+                return;
+            }
+
+            // Проверка на ничью
+            let roundDraw = !gameState.includes("");
+            if (roundDraw) {
+                statusText.textContent = "🤝 Ничья!";
+                statusText.style.color = "#ffffff";
+                isGameActive = false;
+                return;
+            }
+
+            // Смена игрока
+            currentPlayer = currentPlayer === "X" ? "O" : "X";
+            statusText.textContent = `Ход игрока: ${currentPlayer}`;
+        }
+
+        // Перезапуск игры
+        function resetGame() {
+            gameState = ["", "", "", "", "", "", "", "", ""];
+            currentPlayer = "X";
+            isGameActive = true;
+            statusText.textContent = `Ход игрока: ${currentPlayer}`;
+            statusText.style.color = "#00ffcc";
+            
+            cells.forEach(cell => {
+                cell.textContent = "";
+                cell.classList.remove('x', 'o', 'disabled');
+            });
+        }
+
+        // Слушатели событий
+        cells.forEach(cell => cell.addEventListener('click', handleCellClick));
+        resetBtn.addEventListener('click', resetGame);
+    </script>
+</body>
+</html>
