@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Лабиринт 3D</title>
+    <title>Круговой Лабиринт 3D</title>
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
-        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; touch-action: none; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #b5ae82; font-family: sans-serif; }
         
-        /* Главное меню */
+        /* Меню по вашему макету прп.png */
         #menuScreen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background-color: #b5ae82; display: flex; z-index: 10; padding: 5% 8%;
@@ -29,7 +30,6 @@
         }
         .settings-icon::before { content: ""; width: 23px; height: 23px; border: 4px dashed #000; border-radius: 50%; box-sizing: border-box; }
 
-        /* Дополнительные окна */
         .overlay-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background-color: #b5ae82; z-index: 11; display: none; flex-direction: column;
@@ -49,19 +49,16 @@
             color: #fff; text-shadow: 2px 2px #000; pointer-events: none; font-family: monospace; line-height: 1.4;
         }
         
-        /* Мини-карта */
         #minimap {
             position: absolute; top: 15px; left: 15px; width: 130px; height: 130px;
-            border: 2px solid #fff; background: rgba(0,0,0,0.7); z-index: 6; box-shadow: 0 0 10px #000;
+            border: 2px solid #fff; background: rgba(0,0,0,0.8); z-index: 6; box-shadow: 0 0 10px #000;
         }
 
-        /* Кнопка выхода во время игры */
         .ingame-exit-btn {
-            position: absolute; top: 15px; right: 15px; background: rgba(107, 119, 150, 0.7);
-            color: #fff; border: 1px solid #fff; padding: 8px 15px; font-size: 14px; cursor: pointer; z-index: 8;
+            position: absolute; top: 15px; right: 15px; background: rgba(107, 119, 150, 0.8);
+            color: #000; border: 2px solid #000; padding: 8px 15px; font-size: 14px; cursor: pointer; z-index: 8; font-weight: bold;
         }
 
-        /* Экран завершения */
         #winScreen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.9); z-index: 15; display: none;
@@ -69,11 +66,11 @@
         }
 
         /* Мобильное управление */
-        #mobileControls { position: absolute; bottom: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none; z-index: 5; }
+        #mobileControls { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none; z-index: 5; }
         .touch-zone { pointer-events: auto; position: absolute; }
-        #touchLook { top: 0; left: 30%; width: 70%; height: 75%; }
-        #joystickContainer { bottom: 40px; left: 40px; width: 130px; height: 130px; background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; }
-        #joystickStick { position: absolute; top: 40px; left: 40px; width: 50px; height: 50px; background: rgba(255,255,255,0.6); border-radius: 50%; }
+        #touchLook { top: 0; right: 0; width: 65%; height: 100%; }
+        #joystickContainer { bottom: 40px; left: 40px; width: 140px; height: 140px; background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.4); border-radius: 50%; }
+        #joystickStick { position: absolute; top: 45px; left: 45px; width: 50px; height: 50px; background: rgba(255,255,255,0.7); border-radius: 50%; }
     </style>
 </head>
 <body>
@@ -92,27 +89,26 @@
 
     <div id="howToPlay" class="overlay-screen">
         <h2>Как играть</h2>
-        <p><strong>ПК:</strong> Движение — кнопки WASD или Стрелочки. Обзор — движение мыши (нажмите на экран, чтобы активировать). ESC освобождает мышь.</p>
-        <p><strong>Смартфон:</strong> Левый джойстик — движение. Правая часть экрана — проведение пальцем для обзора.</p>
-        <p>Следите за своим положением на мини-карте в левом верхнем углу!</p>
+        <p><strong>ПК:</strong> Ходьба — WASD. Поворот камеры — мышь (кликните на экран для захвата курсора). ESC освобождает мышь.</p>
+        <p><strong>Смартфон:</strong> Левый круг — движение. Правая часть экрана — ведите пальцем для обзора.</p>
         <div class="menu-btn" onclick="toggleOverlay('howToPlay', false)">Назад</div>
     </div>
 
     <div id="settings" class="overlay-screen">
         <h2>Настройки</h2>
-        <p>Чувствительность управления оптимизирована автоматически.</p>
+        <p>Управление адаптировано под ваше устройство автоматически.</p>
         <div class="menu-btn" onclick="toggleOverlay('settings', false)">Назад</div>
     </div>
 
     <div id="multiplayerRoom" class="overlay-screen">
         <h2>Игра с друзьями</h2>
-        <p>Введите любые 3 цифры для входа в общую комнату:</p>
-        <input type="text" id="roomCodeInput" class="code-input" maxlength="3" placeholder="000" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+        <p>Придумайте любые 3 цифры и введите их вместе с другом:</p>
+        <input type="text" id="roomCodeInput" class="code-input" maxlength="3" placeholder="123" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
         <div style="display: flex; gap: 15px;">
-            <div class="menu-btn" onclick="connectMultiplayer()">Подключиться</div>
+            <div class="menu-btn" onclick="initP2PConnection()">Подключиться</div>
             <div class="menu-btn" onclick="toggleOverlay('multiplayerRoom', false)">Назад</div>
         </div>
-        <p id="netStatus" style="font-size: 16px; color: #555; margin-top: 15px;"></p>
+        <p id="netStatus" style="font-size: 18px; color: #111; margin-top: 15px; font-weight: bold;"></p>
     </div>
 
     <div id="gameContainer">
@@ -121,7 +117,7 @@
         <div id="crosshair"></div>
         <div id="gameUi">
             <span id="mpStatus" style="color: #00ffff;">Одиночный режим</span><br>
-            Цель: <span id="distVal">--</span>м
+            До выхода: <span id="distVal">--</span>м
         </div>
         <canvas id="renderCanvas"></canvas>
 
@@ -134,54 +130,55 @@
     </div>
 
     <div id="winScreen">
-        <h1 style="color: #00ffff; font-size: clamp(30px, 6vw, 55px); text-align: center; margin-bottom: 10px;">Здесь был Superman :)</h1>
-        <p style="font-size: 20px; color: #ccc; margin-bottom: 30px;">Вы успешно прошли огромный лабиринт!</p>
+        <h1 style="color: #00ffff; font-size: clamp(30px, 6vw, 55px); text-align: center;">Здесь был Superman :)</h1>
+        <p style="font-size: 20px; color: #ccc; margin-bottom: 30px;">Вы прошли круговой лабиринт!</p>
         <div class="menu-btn" onclick="exitToMenu()">В главное меню</div>
     </div>
 
 <script>
+// ЦИФРОВАЯ МАТРИЦА СТЕН ПО ФОТОГРАФИИ КРУГОВОГО ЛАБИРИНТА (лаб.jpg)
+// Спавн игроков — строго в центре (20, 20). Выход — на внешнем кольце.
 const mapSize = 41;
 const map = [
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,1,
-    1,0,1,0,1,0,1,1,1,0,1,0,1,0,1,1,1,1,1,1,1,0,1,0,1,1,1,0,1,0,1,1,1,1,0,1,0,1,1,0,1,
-    1,0,1,0,0,0,1,0,1,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,1,0,1,0,0,0,1,0,0,1,0,0,0,1,0,0,1,
-    1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,0,0,1,1,1,1,1,0,1,1,
-    1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,1,
-    1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,0,1,0,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1,0,1,1,1,1,0,1,
-    1,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,0,1,0,1,0,0,1,0,1,
-    1,0,1,0,1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,1,1,0,1,1,1,1,1,0,1,1,0,1,0,1,0,0,1,0,1,
-    1,0,1,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,1,0,1,1,0,1,
-    1,0,1,1,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,1,1,0,1,0,0,1,
-    1,0,1,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,1,0,0,0,1,0,1,0,0,0,1,0,1,0,0,0,0,1,0,1,1,
-    1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,0,1,1,1,0,1,0,1,1,1,0,1,0,1,0,1,1,1,1,0,1,1,
-    1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,1,0,0,1,
-    1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,
-    1,0,0,0,0,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,1,0,1,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,1,0,1,
-    1,0,1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,1,1,1,1,0,1,0,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,0,1,
-    1,0,1,0,0,0,0,0,0,0,1,0,0,0,1,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,1,0,0,1,0,1,0,1,
-    1,0,1,0,1,1,1,1,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,0,1,0,1,
-    1,0,0,0,1,0,0,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,1,0,0,0,1,0,1,
-    1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,
-    1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,1,0,1,
-    1,0,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,1,0,1,0,1,0,1,1,1,1,0,1,0,1,
-    1,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,1,0,0,0,1,0,1,0,0,1,0,1,0,1,
-    1,0,1,0,1,1,1,1,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,0,1,0,0,1,0,1,0,1,
-    1,0,1,0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,1,0,1,0,0,0,0,0,1,1,0,1,0,0,0,1,
-    1,0,1,0,1,0,1,0,1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1,0,1,0,1,1,1,1,1,1,0,1,1,1,1,1,
-    1,0,0,0,1,0,1,0,0,0,0,0,1,0,0,0,0,0,1,0,1,0,0,1,0,1,0,0,0,1,0,0,0,0,1,0,0,0,0,0,1,
-    1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,0,1,0,1,0,0,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,
-    1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,1,1,0,1,0,0,0,0,0,1,0,1,0,0,1,0,0,0,1,0,1,
-    1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,1,1,1,1,1,0,1,1,1,1,1,0,1,0,1,0,1,1,0,1,0,1,0,1,
-    1,0,1,0,0,0,0,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,1,0,1,0,0,0,1,
-    1,0,1,0,1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,0,1,0,1,1,1,1,1,
-    1,0,1,0,1,0,0,0,0,0,0,0,1,0,1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,1,0,0,0,0,0,1,
-    1,0,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,
-    1,0,0,0,1,0,1,0,0,0,1,0,1,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,1,0,0,0,1,0,0,0,1,0,1,
-    1,1,1,1,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,0,1,1,1,1,1,0,1,0,1,0,1,
-    1,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,1,0,0,0,1,
-    1,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,0,0,1,1,1,1,1,0,1,0,1,1,1,0,1,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,2,1,
+    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+    1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,
+    1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,
+    1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,
+    1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,
+    1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,
+    1,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1,
+    1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,
+    1,0,1,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0,1,
+    1,0,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,0,1,
+    1,0,1,0,1,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0,1,0,1,
+    1,0,1,0,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,0,1,0,1,
+    1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
+    1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1,1,1,1,1,0,1,1,1,1,1,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
+    1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,0,0,1,0,1,0,0,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
+    1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1,0,1,0,1,0,1,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
+    1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
+    1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1,1,1,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
+    1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,0,1,0,1,0,0,0,1,0,1,0,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
+    1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,0,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+    1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,0,1,0,1,1,1,1,1,0,1,0,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
+    1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
+    1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1,1,1,0,1,1,1,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
+    1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,0,0,1,0,1,0,0,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
+    1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1,1,1,0,1,0,1,0,1,1,1,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
+    1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
+    1,0,1,0,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,0,1,0,1,
+    1,0,1,0,1,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0,1,0,1,
+    1,0,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,0,1,
+    1,0,1,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0,1,
+    1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,
+    1,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1,
+    1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,
+    1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,
+    1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,
+    1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,
+    1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,
+    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
 ];
 
@@ -190,13 +187,19 @@ const ctx = canvas.getContext('2d');
 const minimapCanvas = document.getElementById('minimap');
 const mCtx = minimapCanvas.getContext('2d');
 
-let player = { x: 1.5, y: 1.5, angle: 0, fov: Math.PI / 3, radius: 0.25 };
+// Старт в центре лабиринта
+let player = { x: 20.5, y: 20.5, angle: 0, fov: Math.PI / 3, radius: 0.28 };
 let keys = {};
 let isMobile = false;
 let gameActive = false;
 
-let p2p = { channel: null, isMultiplayer: false, friendPos: { x: 0, y: 0 }, lastUpdate: 0 };
-let joystick = { active: false, startX: 0, startY: 0, curX: 0, curY: 0, moveX: 0, moveY: 0 };
+// Сетевые переменные PeerJS
+let peer = null;
+let conn = null;
+let isHost = false;
+let friend = { x: 0, y: 0, active: false };
+
+let joystick = { active: false, startX: 0, startY: 0, moveX: 0, moveY: 0 };
 
 function checkDevice() {
     isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
@@ -210,36 +213,37 @@ function resizeCanvas() {
 }
 window.addEventListener('resize', resizeCanvas);
 
-window.addEventListener('keydown', e => keys[e.code] = true);
-window.addEventListener('keyup', e => keys[e.code] = false);
+// Кнопки клавиатуры
+window.addEventListener('keydown', e => { if(gameActive) keys[e.code] = true; });
+window.addEventListener('keyup', e => { if(gameActive) keys[e.code] = false; });
 
+// Мышь ПК
 canvas.addEventListener('click', () => {
     if (!isMobile && gameActive) {
         canvas.requestPointerLock = canvas.requestPointerLock || canvas.mozRequestPointerLock;
         canvas.requestPointerLock();
     }
 });
-
 window.addEventListener('mousemove', e => {
     if (gameActive && !isMobile && document.pointerLockElement === canvas) {
-        player.angle += e.movementX * 0.002;
+        player.angle += e.movementX * 0.0025;
     }
 });
 
-// Мобильный обзор
+// Мобильный обзор (Правая часть экрана)
 const touchLookZone = document.getElementById('touchLook');
 let lastTouchX = null;
 touchLookZone.addEventListener('touchstart', e => { lastTouchX = e.touches[0].clientX; });
 touchLookZone.addEventListener('touchmove', e => {
     if (lastTouchX !== null) {
         let currentX = e.touches[0].clientX;
-        player.angle += (currentX - lastTouchX) * 0.005;
+        player.angle += (currentX - lastTouchX) * 0.008;
         lastTouchX = currentX;
     }
 });
 touchLookZone.addEventListener('touchend', () => { lastTouchX = null; });
 
-// Мобильный джойстик
+// Мобильный фиксированный джойстик (Левая часть экрана)
 const joyContainer = document.getElementById('joystickContainer');
 const joyStick = document.getElementById('joystickStick');
 joyContainer.addEventListener('touchstart', e => {
@@ -250,12 +254,11 @@ joyContainer.addEventListener('touchstart', e => {
 });
 joyContainer.addEventListener('touchmove', e => {
     if (!joystick.active) return;
-    e.preventDefault();
     let touch = e.touches[0];
     let dX = touch.clientX - joystick.startX;
     let dY = touch.clientY - joystick.startY;
     let distance = Math.sqrt(dX * dX + dY * dY);
-    let maxLen = 40;
+    let maxLen = 45;
     if (distance > maxLen) { dX = (dX / distance) * maxLen; dY = (dY / distance) * maxLen; }
     joyStick.style.transform = `translate(${dX}px, ${dY}px)`;
     joystick.moveX = dX / maxLen; joystick.moveY = dY / maxLen;
@@ -266,48 +269,86 @@ joyContainer.addEventListener('touchend', () => {
 });
 
 function toggleOverlay(id, show) { document.getElementById(id).style.display = show ? 'flex' : 'none'; }
-function startSingleGame() { p2p.isMultiplayer = false; document.getElementById('mpStatus').innerText = "Одиночный режим"; launchGame(); }
+function startSingleGame() { friend.active = false; document.getElementById('mpStatus').innerText = "Одиночный режим"; launchGame(); }
 function openMultiplayer() { document.getElementById('netStatus').innerText = ""; toggleOverlay('multiplayerRoom', true); }
 
-function connectMultiplayer() {
+// Инициализация P2P сети через PeerJS по вашему 3-значному коду
+function initP2PConnection() {
     let code = document.getElementById('roomCodeInput').value;
-    if (code.length < 3) { document.getElementById('netStatus').innerText = "Введите ровно 3 цифры!"; return; }
-    document.getElementById('netStatus').innerText = "Подключение...";
-    p2p.channel = code; p2p.isMultiplayer = true;
-    if (window.mpSource) window.mpSource.close();
-    window.mpSource = new EventSource(`https://stream.abort.io/channel/${code}`);
-    window.mpSource.onmessage = function(event) {
-        try {
-            let data = JSON.parse(event.data);
-            if (data.id && data.id !== window.playerId) { p2p.friendPos.x = data.x; p2p.friendPos.y = data.y; p2p.lastUpdate = Date.now(); }
-        } catch(e){}
-    };
-    window.mpSource.onerror = function() {
-        document.getElementById('netStatus').innerText = "Готово!";
-        setTimeout(() => {
-            toggleOverlay('multiplayerRoom', false);
-            document.getElementById('mpStatus').innerText = `Комната: ${p2p.channel}`;
-            launchGame();
-        }, 500);
-    };
+    if (code.length < 3) { document.getElementById('netStatus').innerText = "Введите 3 цифры!"; return; }
+    
+    document.getElementById('netStatus').innerText = "Создание линии связи...";
+    
+    // Создаем уникальные ID для Хоста и Гостя на основе кода комнаты
+    let hostId = "maze-host-" + code;
+    let guestId = "maze-guest-" + code;
+
+    if (peer) peer.destroy();
+
+    // Подключаемся к публичному облаку PeerJS (бесплатно и стабильно)
+    peer = new Peer(hostId);
+
+    peer.on('open', (id) => {
+        document.getElementById('netStatus').innerText = "Ожидание друга в комнате...";
+        isHost = true;
+        
+        // Пробуем сами подключиться как гость, если хост уже создан кем-то другим
+        let probePeer = new Peer(guestId);
+        probePeer.on('open', () => {
+            let connection = probePeer.connect(hostId);
+            connection.on('open', () => {
+                isHost = false;
+                conn = connection;
+                setupDataChannels();
+            });
+        });
+    });
+
+    peer.on('connection', (connection) => {
+        if (isHost) {
+            conn = connection;
+            setupDataChannels();
+        }
+    });
+
+    peer.on('error', (err) => {
+        // Если ID хоста занят, значит мы входим как второй игрок (Гость)
+        if (err.type === 'unavailable-id') {
+            peer = new Peer(guestId);
+            peer.on('open', () => {
+                conn = peer.connect(hostId);
+                conn.on('open', () => {
+                    isHost = false;
+                    setupDataChannels();
+                });
+            });
+        }
+    });
 }
 
-function sendNetData() {
-    if (!p2p.isMultiplayer) return;
-    fetch(`https://stream.abort.io/channel/${p2p.channel}`, {
-        method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: window.playerId, x: player.x, y: player.y })
-    }).catch(()=>{});
+function setupDataChannels() {
+    document.getElementById('netStatus').innerText = "Игрок подключился!";
+    friend.active = true;
+    setTimeout(() => {
+        toggleOverlay('multiplayerRoom', false);
+        document.getElementById('mpStatus').innerText = isHost ? "Вы: Создатель" : "Вы: Гость";
+        launchGame();
+    }, 600);
+
+    conn.on('data', (data) => {
+        // Получаем чистые данные без цикличных багов обратной связи
+        friend.x = data.x;
+        friend.y = data.y;
+    });
 }
 
 function launchGame() {
-    window.playerId = window.playerId || Math.random().toString(36).substring(2, 9);
     document.getElementById('menuScreen').style.display = 'none';
     document.getElementById('gameContainer').style.display = 'block';
-    player.x = 1.5; player.y = 1.5; player.angle = 0;
+    player.x = 20.5; player.y = 20.5; player.angle = 0; keys = {};
     resizeCanvas();
     gameActive = true;
-    p2p.lastUpdate = Date.now();
+    lastTime = performance.now();
     requestAnimationFrame(gameLoop);
 }
 
@@ -317,34 +358,35 @@ function exitToMenu() {
     document.getElementById('gameContainer').style.display = 'none';
     document.getElementById('winScreen').style.display = 'none';
     document.getElementById('menuScreen').style.display = 'flex';
-    if (window.mpSource) window.mpSource.close();
+    if (conn) conn.close();
+    if (peer) peer.destroy();
 }
 
-// Новая физика скольжения и коллизий
-function checkWallCollision(posX, posY) {
-    let buffer = player.radius;
-    // Проверяем квадратные границы вокруг новой позиции игрока
-    for (let x = -1; x <= 1; x++) {
-        for (let y = -1; y <= 1; y++) {
-            let checkGridX = Math.floor(posX + x * buffer);
-            let checkGridY = Math.floor(posY + y * buffer);
-            if (checkGridX >= 0 && checkGridX < mapSize && checkGridY >= 0 && checkGridY < mapSize) {
-                if (map[checkGridY * mapSize + checkGridX] === 1) return true; // Хит стены
-            }
-        }
+// Защита от прохождения сквозь стены
+function isColliding(posX, posY) {
+    let b = player.radius;
+    // Сканируем углы физического хитбокса игрока
+    let checkPoints = [
+        {x: posX - b, y: posY - b}, {x: posX + b, y: posY - b},
+        {x: posX - b, y: posY + b}, {x: posX + b, y: posY + b}
+    ];
+    for (let p of checkPoints) {
+        let gx = Math.floor(p.x);
+        let gy = Math.floor(p.y);
+        if (gx < 0 || gx >= mapSize || gy < 0 || gy >= mapSize) return true;
+        if (map[gy * mapSize + gx] === 1) return true;
     }
     return false;
 }
 
-// Стабилизированный шаг логики
 let lastTime = performance.now();
 function updateLogic() {
     let now = performance.now();
-    let dt = Math.min((now - lastTime) / 1000, 0.1); // Нормализация времени для защиты от ускорений
+    let dt = Math.min((now - lastTime) / 1000, 0.1); // Нормализация скорости (Delta Time)
     lastTime = now;
 
-    let moveSpeed = 3.5 * dt;  // Зависит от фреймрейта
-    let rotSpeed = 2.2 * dt;
+    let moveSpeed = 3.8 * dt; 
+    let rotSpeed = 2.4 * dt;
 
     if (keys['KeyA'] || keys['ArrowLeft']) player.angle -= rotSpeed;
     if (keys['KeyD'] || keys['ArrowRight']) player.angle += rotSpeed;
@@ -353,36 +395,39 @@ function updateLogic() {
     if (keys['KeyW'] || keys['ArrowUp']) { moveX += Math.cos(player.angle); moveY += Math.sin(player.angle); }
     if (keys['KeyS'] || keys['ArrowDown']) { moveX -= Math.cos(player.angle); moveY -= Math.sin(player.angle); }
 
+    // Расчет джойстика смартфонов
     if (isMobile && joystick.active) {
         moveX += Math.cos(player.angle) * (-joystick.moveY); moveY += Math.sin(player.angle) * (-joystick.moveY);
         moveX += Math.cos(player.angle + Math.PI/2) * joystick.moveX * 0.7; moveY += Math.sin(player.angle + Math.PI/2) * joystick.moveX * 0.7;
     }
 
-    // Раздельная проверка коллизий по осям для эффекта плавного скольжения вдоль стен
+    // Скольжение вдоль стен
     if (moveX !== 0 || moveY !== 0) {
-        let length = Math.sqrt(moveX * moveX + moveY * moveY);
-        let nextX = player.x + (moveX / length) * moveSpeed;
-        let nextY = player.y + (moveY / length) * moveSpeed;
+        let len = Math.sqrt(moveX*moveX + moveY*moveY);
+        let nextX = player.x + (moveX / len) * moveSpeed;
+        let nextY = player.y + (moveY / len) * moveSpeed;
 
-        if (!checkWallCollision(nextX, player.y)) player.x = nextX;
-        if (!checkWallCollision(player.x, nextY)) player.y = nextY;
+        if (!isColliding(nextX, player.y)) player.x = nextX;
+        if (!isColliding(player.x, nextY)) player.y = nextY;
     }
 
-    let targetX = 39.5, targetY = 39.5;
-    let dist = Math.sqrt((targetX - player.x)**2 + (targetY - player.y)**2);
-    document.getElementById('distVal').innerText = Math.floor(dist * 4);
+    // Дистанция до выхода (клетка 39, 39)
+    let dist = Math.sqrt((39.5 - player.x)**2 + (39.5 - player.y)**2);
+    document.getElementById('distVal').innerText = Math.floor(dist * 3);
 
     if (map[Math.floor(player.y) * mapSize + Math.floor(player.x)] === 2) {
         gameActive = false;
         document.getElementById('winScreen').style.display = 'flex';
     }
 
-    // Посылка пакетов другу раз в 100мс
-    if (p2p.isMultiplayer && now - p2p.lastUpdate > 100) { sendNetData(); p2p.lastUpdate = now; }
+    // Отправка координат напрямую другу
+    if (friend.active && conn && conn.open) {
+        conn.send({ x: player.x, y: player.y });
+    }
 }
 
 function drawFrame() {
-    // Небо и Пол
+    // Небо и Земля
     ctx.fillStyle = '#1c1f22'; ctx.fillRect(0, 0, canvas.width, canvas.height / 2);
     ctx.fillStyle = '#2c2b24'; ctx.fillRect(0, canvas.height / 2, canvas.width, canvas.height / 2);
 
@@ -395,46 +440,44 @@ function drawFrame() {
         let dist = 0; let hit = false; let hitType = 0;
         let cosR = Math.cos(rayAngle), sinR = Math.sin(rayAngle);
 
-        while (!hit && dist < 18) {
-            dist += 0.04;
-            let checkX = Math.floor(player.x + cosR * dist);
-            let checkY = Math.floor(player.y + sinR * dist);
-            if (checkX < 0 || checkX >= mapSize || checkY < 0 || checkY >= mapSize) { hit = true; dist = 18; }
-            else { let cell = map[checkY * mapSize + checkX]; if (cell > 0) { hit = true; hitType = cell; } }
+        while (!hit && dist < 25) {
+            dist += 0.05;
+            let cx = Math.floor(player.x + cosR * dist);
+            let cy = Math.floor(player.y + sinR * dist);
+            if (cx < 0 || cx >= mapSize || cy < 0 || cy >= mapSize) { hit = true; dist = 25; }
+            else { let cell = map[cy * mapSize + cx]; if (cell > 0) { hit = true; hitType = cell; } }
         }
 
         let correctedDist = dist * Math.cos(rayAngle - player.angle);
         let wallHeight = Math.min(canvas.height, Math.floor(canvas.height / correctedDist));
-        let lightValue = Math.max(0, 255 - (correctedDist * 16));
+        let light = Math.max(0, 255 - (correctedDist * 12));
 
-        if (hitType === 1) ctx.fillStyle = `rgb(${(80 * lightValue)/255}, ${(90 * lightValue)/255}, ${(110 * lightValue)/255})`;
-        else if (hitType === 2) ctx.fillStyle = `rgb(0, ${lightValue}, ${lightValue})`;
+        if (hitType === 1) ctx.fillStyle = `rgb(${(70 * light)/255}, ${(80 * light)/255}, ${(95 * light)/255})`;
+        else if (hitType === 2) ctx.fillStyle = `rgb(0, ${light}, ${light})`;
 
         ctx.fillRect(i * rayWidth, (canvas.height - wallHeight) / 2, rayWidth + 1, wallHeight);
     }
 
-    // Отрисовка спрайта друга
-    if (p2p.isMultiplayer) {
-        let fDx = p2p.friendPos.x - player.x; let fDy = p2p.friendPos.y - player.y;
+    // Отрендерить друга (Игрока 2), если он рядом
+    if (friend.active) {
+        let fDx = friend.x - player.x; let fDy = friend.y - player.y;
         let fAngle = Math.atan2(fDy, fDx) - player.angle;
         while (fAngle < -Math.PI) fAngle += Math.PI * 2; while (fAngle > Math.PI) fAngle -= Math.PI * 2;
         if (Math.abs(fAngle) < halfFov) {
             let fDist = Math.sqrt(fDx*fDx + fDy*fDy);
             let screenX = (0.5 + fAngle / player.fov) * canvas.width;
-            let spriteHeight = Math.min(canvas.height, Math.floor(canvas.height / fDist));
-            let sSize = spriteHeight * 0.25;
+            let sSize = Math.min(canvas.height, Math.floor(canvas.height / fDist)) * 0.25;
             ctx.beginPath(); ctx.fillStyle = '#ff3b30'; ctx.arc(screenX, canvas.height/2, sSize, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = '#fff'; ctx.font = '14px monospace'; ctx.textAlign = 'center'; ctx.fillText("Игрок 2", screenX, canvas.height/2 - sSize - 10);
+            ctx.fillStyle = '#fff'; ctx.font = '14px monospace'; ctx.textAlign = 'center'; ctx.fillText("Друг", screenX, canvas.height/2 - sSize - 10);
         }
     }
 
     drawMinimap();
 }
 
-// Функция рендеринга интерактивной 2D Мини-карты
 function drawMinimap() {
     mCtx.clearRect(0, 0, minimapCanvas.width, minimapCanvas.height);
-    let viewSize = 9; // Сколько клеток вокруг игрока показывать на мини-карте
+    let viewSize = 11; 
     let cellSize = minimapCanvas.width / viewSize;
     let startX = player.x - viewSize / 2;
     let startY = player.y - viewSize / 2;
@@ -451,19 +494,19 @@ function drawMinimap() {
         }
     }
 
-    // Отображаем Игрока 1 (Синий круг с лучом направления взгляда)
+    // Вы (Синяя точка с лучом взгляда)
     let pCenterX = (player.x - startX) * cellSize;
     let pCenterY = (player.y - startY) * cellSize;
     mCtx.strokeStyle = '#007aff'; mCtx.lineWidth = 2;
     mCtx.beginPath(); mCtx.moveTo(pCenterX, pCenterY);
-    mCtx.lineTo(pCenterX + Math.cos(player.angle) * 15, pCenterY + Math.sin(player.angle) * 15);
+    mCtx.lineTo(pCenterX + Math.cos(player.angle) * 12, pCenterY + Math.sin(player.angle) * 12);
     mCtx.stroke();
     mCtx.beginPath(); mCtx.fillStyle = '#007aff'; mCtx.arc(pCenterX, pCenterY, 5, 0, Math.PI * 2); mCtx.fill();
 
-    // Отображаем Игрока 2 по сети (Красный круг)
-    if (p2p.isMultiplayer) {
-        let fCenterX = (p2p.friendPos.x - startX) * cellSize;
-        let fCenterY = (p2p.friendPos.y - startY) * cellSize;
+    // Друг на мини-карте (Красная точка)
+    if (friend.active) {
+        let fCenterX = (friend.x - startX) * cellSize;
+        let fCenterY = (friend.y - startY) * cellSize;
         if (fCenterX >= 0 && fCenterX <= minimapCanvas.width && fCenterY >= 0 && fCenterY <= minimapCanvas.height) {
             mCtx.beginPath(); mCtx.fillStyle = '#ff3b30'; mCtx.arc(fCenterX, fCenterY, 4, 0, Math.PI * 2); mCtx.fill();
         }
