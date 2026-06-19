@@ -8,36 +8,28 @@
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #b5ae82; font-family: sans-serif; }
         
-        /* Главное меню по макету */
+        /* Главное меню */
         #menuScreen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background-color: #b5ae82; display: flex; z-index: 10; padding: 5% 8%;
         }
-        .menu-left {
-            display: flex; flex-direction: column; justify-content: flex-start; gap: 20px; width: 30%;
-        }
-        .menu-right {
-            width: 70%; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
-        }
+        .menu-left { display: flex; flex-direction: column; justify-content: flex-start; gap: 20px; width: 30%; }
+        .menu-right { width: 70%; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
         .menu-btn {
             background-color: #6b7796; color: #000; border: 2px solid #000;
             padding: 12px; font-size: clamp(16px, 2.5vw, 32px); cursor: pointer; text-align: center;
             box-shadow: 3px 3px 0px #000; transition: transform 0.1s;
         }
         .menu-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0px #000; }
-        .main-title {
-            font-size: clamp(40px, 8vw, 110px); color: #23272a; margin: 0; font-weight: normal; line-height: 1.1;
-        }
+        .main-title { font-size: clamp(40px, 8vw, 110px); color: #23272a; margin: 0; font-weight: normal; line-height: 1.1; }
         .settings-icon {
             position: absolute; bottom: 20px; left: 20px; width: 45px; height: 45px;
             background-color: #6b7796; border: 2px solid #000; cursor: pointer;
             display: flex; justify-content: center; align-items: center;
         }
-        .settings-icon::before {
-            content: ""; width: 23px; height: 23px; border: 4px dashed #000; border-radius: 50%; box-sizing: border-box;
-        }
+        .settings-icon::before { content: ""; width: 23px; height: 23px; border: 4px dashed #000; border-radius: 50%; box-sizing: border-box; }
 
-        /* Дополнительные окна меню */
+        /* Дополнительные окна */
         .overlay-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background-color: #b5ae82; z-index: 11; display: none; flex-direction: column;
@@ -45,21 +37,28 @@
         }
         .overlay-screen h2 { font-size: 36px; margin-bottom: 20px; }
         .overlay-screen p { font-size: 20px; max-width: 600px; line-height: 1.6; }
-        .code-input {
-            font-size: 32px; letter-spacing: 8px; text-align: center; padding: 10px;
-            width: 180px; border: 2px solid #000; margin: 20px; background: #fff;
-        }
+        .code-input { font-size: 32px; letter-spacing: 8px; text-align: center; padding: 10px; width: 180px; border: 2px solid #000; margin: 20px; background: #fff; }
 
         /* Игровой интерфейс */
         #gameContainer { position: relative; width: 100%; height: 100%; display: none; }
         canvas { display: block; width: 100%; height: 100%; background-color: #000; }
-        #crosshair {
-            position: absolute; top: 50%; left: 50%; width: 6px; height: 6px;
-            background: rgba(255,255,255,0.4); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none;
-        }
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; background: rgba(255,255,255,0.4); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+        
         #gameUi {
-            position: absolute; top: 15px; left: 15px; font-size: clamp(14px, 2vw, 22px);
-            color: #fff; text-shadow: 2px 2px #000; pointer-events: none; font-family: monospace;
+            position: absolute; top: 15px; left: 160px; font-size: clamp(12px, 1.8vw, 18px);
+            color: #fff; text-shadow: 2px 2px #000; pointer-events: none; font-family: monospace; line-height: 1.4;
+        }
+        
+        /* Мини-карта */
+        #minimap {
+            position: absolute; top: 15px; left: 15px; width: 130px; height: 130px;
+            border: 2px solid #fff; background: rgba(0,0,0,0.7); z-index: 6; box-shadow: 0 0 10px #000;
+        }
+
+        /* Кнопка выхода во время игры */
+        .ingame-exit-btn {
+            position: absolute; top: 15px; right: 15px; background: rgba(107, 119, 150, 0.7);
+            color: #fff; border: 1px solid #fff; padding: 8px 15px; font-size: 14px; cursor: pointer; z-index: 8;
         }
 
         /* Экран завершения */
@@ -69,21 +68,12 @@
             flex-direction: column; justify-content: center; align-items: center; color: #fff;
         }
 
-        /* Мобильное управление (Адаптивный Touch-интерфейс) */
-        #mobileControls {
-            position: absolute; bottom: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; display: none; z-index: 5;
-        }
+        /* Мобильное управление */
+        #mobileControls { position: absolute; bottom: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none; z-index: 5; }
         .touch-zone { pointer-events: auto; position: absolute; }
-        #touchLook { top: 0; left: 30%; width: 70%; height: 75%; } /* Зона обзора всей правой частью экрана */
-        #joystickContainer {
-            bottom: 40px; left: 40px; width: 130px; height: 130px;
-            background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%;
-        }
-        #joystickStick {
-            position: absolute; top: 40px; left: 40px; width: 50px; height: 50px;
-            background: rgba(255,255,255,0.6); border-radius: 50%; transition: transform 0.05s;
-        }
+        #touchLook { top: 0; left: 30%; width: 70%; height: 75%; }
+        #joystickContainer { bottom: 40px; left: 40px; width: 130px; height: 130px; background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; }
+        #joystickStick { position: absolute; top: 40px; left: 40px; width: 50px; height: 50px; background: rgba(255,255,255,0.6); border-radius: 50%; }
     </style>
 </head>
 <body>
@@ -102,21 +92,21 @@
 
     <div id="howToPlay" class="overlay-screen">
         <h2>Как играть</h2>
-        <p><strong>ПК:</strong> Движение — кнопки WASD или Стрелочки. Обзор — движение мыши (нажмите на экран, чтобы заблокировать курсор). ESC — выход в меню.</p>
-        <p><strong>Смартфон:</strong> Левый джойстик — движение персонажа. Правая часть экрана — проведение пальцем для поворота камеры.</p>
-        <p>Цель: найти выход из огромного лабиринта. На финише вас ждет секретное послание!</p>
+        <p><strong>ПК:</strong> Движение — кнопки WASD или Стрелочки. Обзор — движение мыши (нажмите на экран, чтобы активировать). ESC освобождает мышь.</p>
+        <p><strong>Смартфон:</strong> Левый джойстик — движение. Правая часть экрана — проведение пальцем для обзора.</p>
+        <p>Следите за своим положением на мини-карте в левом верхнем углу!</p>
         <div class="menu-btn" onclick="toggleOverlay('howToPlay', false)">Назад</div>
     </div>
 
     <div id="settings" class="overlay-screen">
         <h2>Настройки</h2>
-        <p>Здесь вы сможете настроить чувствительность или сбросить прогресс в будущих версиях.</p>
+        <p>Чувствительность управления оптимизирована автоматически.</p>
         <div class="menu-btn" onclick="toggleOverlay('settings', false)">Назад</div>
     </div>
 
     <div id="multiplayerRoom" class="overlay-screen">
         <h2>Игра с друзьями</h2>
-        <p>Введите любые 3 цифры для создания или входа в комнату синхронизации:</p>
+        <p>Введите любые 3 цифры для входа в общую комнату:</p>
         <input type="text" id="roomCodeInput" class="code-input" maxlength="3" placeholder="000" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
         <div style="display: flex; gap: 15px;">
             <div class="menu-btn" onclick="connectMultiplayer()">Подключиться</div>
@@ -126,10 +116,12 @@
     </div>
 
     <div id="gameContainer">
+        <canvas id="minimap" width="130" height="130"></canvas>
+        <button class="ingame-exit-btn" onclick="exitToMenu()">Выйти в меню</button>
         <div id="crosshair"></div>
         <div id="gameUi">
-            <span id="mpStatus">Одиночный режим</span><br>
-            Дистанция до финиша: <span id="distVal">--</span>м
+            <span id="mpStatus" style="color: #00ffff;">Одиночный режим</span><br>
+            Цель: <span id="distVal">--</span>м
         </div>
         <canvas id="renderCanvas"></canvas>
 
@@ -148,11 +140,6 @@
     </div>
 
 <script>
-/**
- * ГЕНЕРАЦИЯ БОЛЬШОГО СЛОЖНОГО ЛАБИРИНТА НА ОСНОВЕ ФОТОГРАФИИ
- * 1 - стена, 0 - коридор, 2 - финиш.
- * Масштаб увеличен до гигантской детальной сетки 41x41!
- */
 const mapSize = 41;
 const map = [
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
@@ -198,40 +185,34 @@ const map = [
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
 ];
 
-// Инициализация игровых переменных
 const canvas = document.getElementById('renderCanvas');
 const ctx = canvas.getContext('2d');
+const minimapCanvas = document.getElementById('minimap');
+const mCtx = minimapCanvas.getContext('2d');
 
-let player = { x: 1.5, y: 1.5, angle: 0, fov: Math.PI / 3 };
+let player = { x: 1.5, y: 1.5, angle: 0, fov: Math.PI / 3, radius: 0.25 };
 let keys = {};
 let isMobile = false;
 let gameActive = false;
 
-// Сетевые настройки (Публичный бесплатный брокер для тестов обмена)
 let p2p = { channel: null, isMultiplayer: false, friendPos: { x: 0, y: 0 }, lastUpdate: 0 };
-
-// Константы джойстика
 let joystick = { active: false, startX: 0, startY: 0, curX: 0, curY: 0, moveX: 0, moveY: 0 };
 
-// Определение типа устройства при старте
 function checkDevice() {
     isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
                || (window.innerWidth <= 800 && window.innerHeight <= 600);
     document.getElementById('mobileControls').style.display = isMobile ? 'block' : 'none';
 }
 
-// Изменение размера канваса под экран
 function resizeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 }
-window.addEventListener('resize', () => { resizeCanvas(); });
+window.addEventListener('resize', resizeCanvas);
 
-// Обработка клавиатуры
 window.addEventListener('keydown', e => keys[e.code] = true);
 window.addEventListener('keyup', e => keys[e.code] = false);
 
-// Блокировка и обработка мыши для ПК
 canvas.addEventListener('click', () => {
     if (!isMobile && gameActive) {
         canvas.requestPointerLock = canvas.requestPointerLock || canvas.mozRequestPointerLock;
@@ -239,142 +220,82 @@ canvas.addEventListener('click', () => {
     }
 });
 
-document.addEventListener('pointerlockchange', () => {
-    // Если на ПК вышли из режима мыши по ESC — возвращаем меню
-    if (document.pointerLockElement !== canvas && !isMobile && gameActive) {
-        exitToMenu();
-    }
-});
-
 window.addEventListener('mousemove', e => {
     if (gameActive && !isMobile && document.pointerLockElement === canvas) {
-        player.angle += e.movementX * 0.0025;
+        player.angle += e.movementX * 0.002;
     }
 });
 
-// Сенсорное управление для смартфонов
+// Мобильный обзор
 const touchLookZone = document.getElementById('touchLook');
 let lastTouchX = null;
-
-touchLookZone.addEventListener('touchstart', e => {
-    lastTouchX = e.touches[0].clientX;
-});
+touchLookZone.addEventListener('touchstart', e => { lastTouchX = e.touches[0].clientX; });
 touchLookZone.addEventListener('touchmove', e => {
     if (lastTouchX !== null) {
         let currentX = e.touches[0].clientX;
-        let diffX = currentX - lastTouchX;
-        player.angle += diffX * 0.006; // Чувствительность поворота пальцем
+        player.angle += (currentX - lastTouchX) * 0.005;
         lastTouchX = currentX;
     }
 });
 touchLookZone.addEventListener('touchend', () => { lastTouchX = null; });
 
-// Сенсорный джойстик
+// Мобильный джойстик
 const joyContainer = document.getElementById('joystickContainer');
 const joyStick = document.getElementById('joystickStick');
-
 joyContainer.addEventListener('touchstart', e => {
     joystick.active = true;
     let rect = joyContainer.getBoundingClientRect();
     joystick.startX = rect.left + rect.width / 2;
     joystick.startY = rect.top + rect.height / 2;
 });
-
 joyContainer.addEventListener('touchmove', e => {
     if (!joystick.active) return;
     e.preventDefault();
     let touch = e.touches[0];
-    
     let dX = touch.clientX - joystick.startX;
     let dY = touch.clientY - joystick.startY;
     let distance = Math.sqrt(dX * dX + dY * dY);
-    let maxLen = 40; // Максимальное смещение стика
-
-    if (distance > maxLen) {
-        dX = (dX / distance) * maxLen;
-        dY = (dY / distance) * maxLen;
-    }
-
+    let maxLen = 40;
+    if (distance > maxLen) { dX = (dX / distance) * maxLen; dY = (dY / distance) * maxLen; }
     joyStick.style.transform = `translate(${dX}px, ${dY}px)`;
-    
-    // Переводим в нормализованные коэффициенты движения (-1 до 1)
-    joystick.moveX = dX / maxLen;
-    joystick.moveY = dY / maxLen;
+    joystick.moveX = dX / maxLen; joystick.moveY = dY / maxLen;
 });
-
 joyContainer.addEventListener('touchend', () => {
-    joystick.active = false;
-    joystick.moveX = 0;
-    joystick.moveY = 0;
+    joystick.active = false; joystick.moveX = 0; joystick.moveY = 0;
     joyStick.style.transform = 'translate(0px, 0px)';
 });
 
+function toggleOverlay(id, show) { document.getElementById(id).style.display = show ? 'flex' : 'none'; }
+function startSingleGame() { p2p.isMultiplayer = false; document.getElementById('mpStatus').innerText = "Одиночный режим"; launchGame(); }
+function openMultiplayer() { document.getElementById('netStatus').innerText = ""; toggleOverlay('multiplayerRoom', true); }
 
-// Переключение окон меню
-function toggleOverlay(id, show) {
-    document.getElementById(id).style.display = show ? 'flex' : 'none';
-}
-
-function startSingleGame() {
-    p2p.isMultiplayer = false;
-    document.getElementById('mpStatus').innerText = "Одиночный режим";
-    launchGame();
-}
-
-function openMultiplayer() {
-    document.getElementById('netStatus').innerText = "";
-    toggleOverlay('multiplayerRoom', true);
-}
-
-// Мультиплеер через бесплатное API синхронизации данных (EventSource / Веб-стрим)
 function connectMultiplayer() {
     let code = document.getElementById('roomCodeInput').value;
-    if (code.length < 3) {
-        document.getElementById('netStatus').innerText = "Введите ровно 3 цифры!";
-        return;
-    }
-
-    document.getElementById('netStatus').innerText = "Подключение к комнате " + code + "...";
-    p2p.channel = code;
-    p2p.isMultiplayer = true;
-
-    // Закрываем старое соединение, если было
+    if (code.length < 3) { document.getElementById('netStatus').innerText = "Введите ровно 3 цифры!"; return; }
+    document.getElementById('netStatus').innerText = "Подключение...";
+    p2p.channel = code; p2p.isMultiplayer = true;
     if (window.mpSource) window.mpSource.close();
-
-    // Открываем постоянный поток данных комнаты через открытый CORS ретранслятор для джаваскрипта
     window.mpSource = new EventSource(`https://stream.abort.io/channel/${code}`);
-    
     window.mpSource.onmessage = function(event) {
         try {
             let data = JSON.parse(event.data);
-            // Если пакет прилетел от друга (не от нас)
-            if (data.id && data.id !== window.playerId) {
-                p2p.friendPos.x = data.x;
-                p2p.friendPos.y = data.y;
-                p2p.lastUpdate = Date.now();
-            }
+            if (data.id && data.id !== window.playerId) { p2p.friendPos.x = data.x; p2p.friendPos.y = data.y; p2p.lastUpdate = Date.now(); }
         } catch(e){}
     };
-
     window.mpSource.onerror = function() {
-        // Сервер ретрансляции готов
-        document.getElementById('netStatus').innerText = "Готово к игре!";
+        document.getElementById('netStatus').innerText = "Готово!";
         setTimeout(() => {
             toggleOverlay('multiplayerRoom', false);
             document.getElementById('mpStatus').innerText = `Комната: ${p2p.channel}`;
             launchGame();
-        }, 800);
+        }, 500);
     };
 }
 
-// Отправка своих координат по сети
 function sendNetData() {
-    if (!p2p.isMultiplayer || Date.now() - p2p.lastUpdate < 80) return; // Ограничиваем частоту пакетов
-
+    if (!p2p.isMultiplayer) return;
     fetch(`https://stream.abort.io/channel/${p2p.channel}`, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: window.playerId, x: player.x, y: player.y })
     }).catch(()=>{});
 }
@@ -383,171 +304,179 @@ function launchGame() {
     window.playerId = window.playerId || Math.random().toString(36).substring(2, 9);
     document.getElementById('menuScreen').style.display = 'none';
     document.getElementById('gameContainer').style.display = 'block';
-    
-    // Сброс координат
-    player.x = 1.5;
-    player.y = 1.5;
-    player.angle = 0;
-    
+    player.x = 1.5; player.y = 1.5; player.angle = 0;
     resizeCanvas();
     gameActive = true;
-    gameLoop();
+    p2p.lastUpdate = Date.now();
+    requestAnimationFrame(gameLoop);
 }
 
 function exitToMenu() {
     gameActive = false;
+    if (document.pointerLockElement === canvas) document.exitPointerLock();
     document.getElementById('gameContainer').style.display = 'none';
     document.getElementById('winScreen').style.display = 'none';
     document.getElementById('menuScreen').style.display = 'flex';
     if (window.mpSource) window.mpSource.close();
 }
 
-// Обновление физики и ходьбы
+// Новая физика скольжения и коллизий
+function checkWallCollision(posX, posY) {
+    let buffer = player.radius;
+    // Проверяем квадратные границы вокруг новой позиции игрока
+    for (let x = -1; x <= 1; x++) {
+        for (let y = -1; y <= 1; y++) {
+            let checkGridX = Math.floor(posX + x * buffer);
+            let checkGridY = Math.floor(posY + y * buffer);
+            if (checkGridX >= 0 && checkGridX < mapSize && checkGridY >= 0 && checkGridY < mapSize) {
+                if (map[checkGridY * mapSize + checkGridX] === 1) return true; // Хит стены
+            }
+        }
+    }
+    return false;
+}
+
+// Стабилизированный шаг логики
+let lastTime = performance.now();
 function updateLogic() {
-    let moveSpeed = 0.045;
-    let rotSpeed = 0.035;
+    let now = performance.now();
+    let dt = Math.min((now - lastTime) / 1000, 0.1); // Нормализация времени для защиты от ускорений
+    lastTime = now;
 
-    // Считаем шаг перемещения
-    let moveX = 0;
-    let moveY = 0;
+    let moveSpeed = 3.5 * dt;  // Зависит от фреймрейта
+    let rotSpeed = 2.2 * dt;
 
-    // Логика кнопок (ПК)
     if (keys['KeyA'] || keys['ArrowLeft']) player.angle -= rotSpeed;
     if (keys['KeyD'] || keys['ArrowRight']) player.angle += rotSpeed;
 
-    if (keys['KeyW'] || keys['ArrowUp']) {
-        moveX += Math.cos(player.angle) * moveSpeed;
-        moveY += Math.sin(player.angle) * moveSpeed;
-    }
-    if (keys['KeyS'] || keys['ArrowDown']) {
-        moveX -= Math.cos(player.angle) * moveSpeed;
-        moveY -= Math.sin(player.angle) * moveSpeed;
-    }
+    let moveX = 0; let moveY = 0;
+    if (keys['KeyW'] || keys['ArrowUp']) { moveX += Math.cos(player.angle); moveY += Math.sin(player.angle); }
+    if (keys['KeyS'] || keys['ArrowDown']) { moveX -= Math.cos(player.angle); moveY -= Math.sin(player.angle); }
 
-    // Логика джойстика (Смартфоны)
     if (isMobile && joystick.active) {
-        // Вперед-назад относительно взгляда камеры
-        moveX += Math.cos(player.angle) * (-joystick.moveY) * moveSpeed;
-        moveY += Math.sin(player.angle) * (-joystick.moveY) * moveSpeed;
-        // Стрейф (боковое смещение)
-        moveX += Math.cos(player.angle + Math.PI/2) * (joystick.moveX) * moveSpeed * 0.6;
-        moveY += Math.sin(player.angle + Math.PI/2) * (joystick.moveX) * moveSpeed * 0.6;
+        moveX += Math.cos(player.angle) * (-joystick.moveY); moveY += Math.sin(player.angle) * (-joystick.moveY);
+        moveX += Math.cos(player.angle + Math.PI/2) * joystick.moveX * 0.7; moveY += Math.sin(player.angle + Math.PI/2) * joystick.moveX * 0.7;
     }
 
-    // Обработка коллизий (Стены)
-    let newX = player.x + moveX;
-    let newY = player.y + moveY;
+    // Раздельная проверка коллизий по осям для эффекта плавного скольжения вдоль стен
+    if (moveX !== 0 || moveY !== 0) {
+        let length = Math.sqrt(moveX * moveX + moveY * moveY);
+        let nextX = player.x + (moveX / length) * moveSpeed;
+        let nextY = player.y + (moveY / length) * moveSpeed;
 
-    if (map[Math.floor(player.y) * mapSize + Math.floor(newX)] !== 1) player.x = newX;
-    if (map[Math.floor(newY) * mapSize + Math.floor(player.x)] !== 1) player.y = newY;
+        if (!checkWallCollision(nextX, player.y)) player.x = nextX;
+        if (!checkWallCollision(player.x, nextY)) player.y = nextY;
+    }
 
-    // Считаем дистанцию до финиша (клетка 39, 39)
     let targetX = 39.5, targetY = 39.5;
-    let dx = targetX - player.x;
-    let dy = targetY - player.y;
-    let dist = Math.sqrt(dx*dx + dy*dy);
-    document.getElementById('distVal').innerText = Math.floor(dist * 4); 
+    let dist = Math.sqrt((targetX - player.x)**2 + (targetY - player.y)**2);
+    document.getElementById('distVal').innerText = Math.floor(dist * 4);
 
-    // Финиш
     if (map[Math.floor(player.y) * mapSize + Math.floor(player.x)] === 2) {
         gameActive = false;
-        document.exitPointerLock();
         document.getElementById('winScreen').style.display = 'flex';
     }
 
-    // Отправляем координаты союзнику
-    if (p2p.isMultiplayer) sendNetData();
+    // Посылка пакетов другу раз в 100мс
+    if (p2p.isMultiplayer && now - p2p.lastUpdate > 100) { sendNetData(); p2p.lastUpdate = now; }
 }
 
-// Отрисовка кадра псевдо-3D (Движок Raycasting)
-function renderFrame() {
-    // Потолок и пол
-    ctx.fillStyle = '#1c1f22';
-    ctx.fillRect(0, 0, canvas.width, canvas.height / 2);
-    ctx.fillStyle = '#2c2b24';
-    ctx.fillRect(0, canvas.height / 2, canvas.width, canvas.height / 2);
+function drawFrame() {
+    // Небо и Пол
+    ctx.fillStyle = '#1c1f22'; ctx.fillRect(0, 0, canvas.width, canvas.height / 2);
+    ctx.fillStyle = '#2c2b24'; ctx.fillRect(0, canvas.height / 2, canvas.width, canvas.height / 2);
 
-    const numRays = Math.ceil(canvas.width / 2); // Оптимизация шага лучей под мобилки
+    const numRays = Math.ceil(canvas.width / 2); 
     const halfFov = player.fov / 2;
     const rayWidth = canvas.width / numRays;
 
     for (let i = 0; i < numRays; i++) {
         let rayAngle = player.angle - halfFov + (i / numRays) * player.fov;
-        let dist = 0;
-        let hit = false;
-        let hitType = 0;
+        let dist = 0; let hit = false; let hitType = 0;
+        let cosR = Math.cos(rayAngle), sinR = Math.sin(rayAngle);
 
-        let cosR = Math.cos(rayAngle);
-        let sinR = Math.sin(rayAngle);
-
-        while (!hit && dist < 20) {
-            dist += 0.03;
+        while (!hit && dist < 18) {
+            dist += 0.04;
             let checkX = Math.floor(player.x + cosR * dist);
             let checkY = Math.floor(player.y + sinR * dist);
-
-            if (checkX < 0 || checkX >= mapSize || checkY < 0 || checkY >= mapSize) {
-                hit = true; dist = 20;
-            } else {
-                let cell = map[checkY * mapSize + checkX];
-                if (cell > 0) { hit = true; hitType = cell; }
-            }
+            if (checkX < 0 || checkX >= mapSize || checkY < 0 || checkY >= mapSize) { hit = true; dist = 18; }
+            else { let cell = map[checkY * mapSize + checkX]; if (cell > 0) { hit = true; hitType = cell; } }
         }
 
         let correctedDist = dist * Math.cos(rayAngle - player.angle);
         let wallHeight = Math.min(canvas.height, Math.floor(canvas.height / correctedDist));
-
-        // Эффект объемного света затухания
         let lightValue = Math.max(0, 255 - (correctedDist * 16));
 
-        if (hitType === 1) {
-            ctx.fillStyle = `rgb(${(80 * lightValue)/255}, ${(90 * lightValue)/255}, ${(110 * lightValue)/255})`; // Каменные серые стены
-        } else if (hitType === 2) {
-            ctx.fillStyle = `rgb(0, ${lightValue}, ${lightValue})`; // Зелено-бирюзовый портал выхода
-        }
+        if (hitType === 1) ctx.fillStyle = `rgb(${(80 * lightValue)/255}, ${(90 * lightValue)/255}, ${(110 * lightValue)/255})`;
+        else if (hitType === 2) ctx.fillStyle = `rgb(0, ${lightValue}, ${lightValue})`;
 
         ctx.fillRect(i * rayWidth, (canvas.height - wallHeight) / 2, rayWidth + 1, wallHeight);
     }
 
-    // РЕНДЕРИНГ ДРУГА (Если игра по сети и он в поле зрения)
-    if (p2p.isMultiplayer && (Date.now() - p2p.lastUpdate < 5000)) {
-        let fDx = p2p.friendPos.x - player.x;
-        let fDy = p2p.friendPos.y - player.y;
-        
+    // Отрисовка спрайта друга
+    if (p2p.isMultiplayer) {
+        let fDx = p2p.friendPos.x - player.x; let fDy = p2p.friendPos.y - player.y;
         let fAngle = Math.atan2(fDy, fDx) - player.angle;
-        // Загоняем в рамки видимости от -PI до PI
-        while (fAngle < -Math.PI) fAngle += Math.PI * 2;
-        while (fAngle > Math.PI) fAngle -= Math.PI * 2;
-
+        while (fAngle < -Math.PI) fAngle += Math.PI * 2; while (fAngle > Math.PI) fAngle -= Math.PI * 2;
         if (Math.abs(fAngle) < halfFov) {
             let fDist = Math.sqrt(fDx*fDx + fDy*fDy);
             let screenX = (0.5 + fAngle / player.fov) * canvas.width;
             let spriteHeight = Math.min(canvas.height, Math.floor(canvas.height / fDist));
-            
-            // Рисуем друга в виде светящейся сферы-персонажа
-            let sSize = spriteHeight * 0.3;
-            ctx.beginPath();
-            ctx.fillStyle = '#ff3b30';
-            ctx.arc(screenX, canvas.height/2, sSize, 0, Math.PI*2);
-            ctx.fill();
-            
-            // Текст над головой друга
-            ctx.fillStyle = '#fff';
-            ctx.font = '14px monospace';
-            ctx.textAlign = 'center';
-            ctx.fillText("Игрок 2", screenX, canvas.height/2 - sSize - 10);
+            let sSize = spriteHeight * 0.25;
+            ctx.beginPath(); ctx.fillStyle = '#ff3b30'; ctx.arc(screenX, canvas.height/2, sSize, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#fff'; ctx.font = '14px monospace'; ctx.textAlign = 'center'; ctx.fillText("Игрок 2", screenX, canvas.height/2 - sSize - 10);
+        }
+    }
+
+    drawMinimap();
+}
+
+// Функция рендеринга интерактивной 2D Мини-карты
+function drawMinimap() {
+    mCtx.clearRect(0, 0, minimapCanvas.width, minimapCanvas.height);
+    let viewSize = 9; // Сколько клеток вокруг игрока показывать на мини-карте
+    let cellSize = minimapCanvas.width / viewSize;
+    let startX = player.x - viewSize / 2;
+    let startY = player.y - viewSize / 2;
+
+    for (let y = 0; y < viewSize; y++) {
+        for (let x = 0; x < viewSize; x++) {
+            let mapX = Math.floor(startX + x);
+            let mapY = Math.floor(startY + y);
+            if (mapX >= 0 && mapX < mapSize && mapY >= 0 && mapY < mapSize) {
+                let cell = map[mapY * mapSize + mapX];
+                if (cell === 1) { mCtx.fillStyle = '#444b52'; mCtx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize); } 
+                else if (cell === 2) { mCtx.fillStyle = '#00ffff'; mCtx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize); }
+            }
+        }
+    }
+
+    // Отображаем Игрока 1 (Синий круг с лучом направления взгляда)
+    let pCenterX = (player.x - startX) * cellSize;
+    let pCenterY = (player.y - startY) * cellSize;
+    mCtx.strokeStyle = '#007aff'; mCtx.lineWidth = 2;
+    mCtx.beginPath(); mCtx.moveTo(pCenterX, pCenterY);
+    mCtx.lineTo(pCenterX + Math.cos(player.angle) * 15, pCenterY + Math.sin(player.angle) * 15);
+    mCtx.stroke();
+    mCtx.beginPath(); mCtx.fillStyle = '#007aff'; mCtx.arc(pCenterX, pCenterY, 5, 0, Math.PI * 2); mCtx.fill();
+
+    // Отображаем Игрока 2 по сети (Красный круг)
+    if (p2p.isMultiplayer) {
+        let fCenterX = (p2p.friendPos.x - startX) * cellSize;
+        let fCenterY = (p2p.friendPos.y - startY) * cellSize;
+        if (fCenterX >= 0 && fCenterX <= minimapCanvas.width && fCenterY >= 0 && fCenterY <= minimapCanvas.height) {
+            mCtx.beginPath(); mCtx.fillStyle = '#ff3b30'; mCtx.arc(fCenterX, fCenterY, 4, 0, Math.PI * 2); mCtx.fill();
         }
     }
 }
 
-// Основной игровой цикл
 function gameLoop() {
     if (!gameActive) return;
     updateLogic();
-    renderFrame();
+    drawFrame();
     requestAnimationFrame(gameLoop);
 }
 
-// Первичная инициализация
 checkDevice();
 </script>
 </body>
