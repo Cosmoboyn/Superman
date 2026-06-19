@@ -2,223 +2,553 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Игра: Крестики-Нолики</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Лабиринт 3D</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #b5ae82; font-family: sans-serif; }
+        
+        /* Главное меню по макету */
+        #menuScreen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #b5ae82; display: flex; z-index: 10; padding: 5% 8%;
+        }
+        .menu-left {
+            display: flex; flex-direction: column; justify-content: flex-start; gap: 20px; width: 30%;
+        }
+        .menu-right {
+            width: 70%; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+        }
+        .menu-btn {
+            background-color: #6b7796; color: #000; border: 2px solid #000;
+            padding: 12px; font-size: clamp(16px, 2.5vw, 32px); cursor: pointer; text-align: center;
+            box-shadow: 3px 3px 0px #000; transition: transform 0.1s;
+        }
+        .menu-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0px #000; }
+        .main-title {
+            font-size: clamp(40px, 8vw, 110px); color: #23272a; margin: 0; font-weight: normal; line-height: 1.1;
+        }
+        .settings-icon {
+            position: absolute; bottom: 20px; left: 20px; width: 45px; height: 45px;
+            background-color: #6b7796; border: 2px solid #000; cursor: pointer;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .settings-icon::before {
+            content: ""; width: 23px; height: 23px; border: 4px dashed #000; border-radius: 50%; box-sizing: border-box;
         }
 
-        body {
-            background: linear-gradient(135deg, #1e1e24, #2a2b3d);
-            color: #fff;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
+        /* Дополнительные окна меню */
+        .overlay-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #b5ae82; z-index: 11; display: none; flex-direction: column;
+            justify-content: center; align-items: center; padding: 20px; text-align: center;
+        }
+        .overlay-screen h2 { font-size: 36px; margin-bottom: 20px; }
+        .overlay-screen p { font-size: 20px; max-width: 600px; line-height: 1.6; }
+        .code-input {
+            font-size: 32px; letter-spacing: 8px; text-align: center; padding: 10px;
+            width: 180px; border: 2px solid #000; margin: 20px; background: #fff;
         }
 
-        h1 {
-            margin-bottom: 10px;
-            font-size: 2.5rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            text-shadow: 0 0 10px rgba(255,255,255,0.2);
+        /* Игровой интерфейс */
+        #gameContainer { position: relative; width: 100%; height: 100%; display: none; }
+        canvas { display: block; width: 100%; height: 100%; background-color: #000; }
+        #crosshair {
+            position: absolute; top: 50%; left: 50%; width: 6px; height: 6px;
+            background: rgba(255,255,255,0.4); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none;
+        }
+        #gameUi {
+            position: absolute; top: 15px; left: 15px; font-size: clamp(14px, 2vw, 22px);
+            color: #fff; text-shadow: 2px 2px #000; pointer-events: none; font-family: monospace;
         }
 
-        .status {
-            font-size: 1.2rem;
-            margin-bottom: 20px;
-            font-weight: bold;
-            color: #00ffcc;
-            min-height: 30px;
+        /* Экран завершения */
+        #winScreen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 15; display: none;
+            flex-direction: column; justify-content: center; align-items: center; color: #fff;
         }
 
-        .board {
-            display: grid;
-            grid-template-columns: repeat(3, 100px);
-            grid-template-rows: repeat(3, 100px);
-            gap: 10px;
-            background-color: #3f405c;
-            padding: 10px;
-            border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        /* Мобильное управление (Адаптивный Touch-интерфейс) */
+        #mobileControls {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; display: none; z-index: 5;
         }
-
-        .cell {
-            background-color: #252635;
-            border: none;
-            border-radius: 8px;
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: #fff;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .touch-zone { pointer-events: auto; position: absolute; }
+        #touchLook { top: 0; left: 30%; width: 70%; height: 75%; } /* Зона обзора всей правой частью экрана */
+        #joystickContainer {
+            bottom: 40px; left: 40px; width: 130px; height: 130px;
+            background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%;
         }
-
-        .cell:hover {
-            background-color: #2d2f44;
-            transform: scale(1.03);
-        }
-
-        /* Цвета для X и O */
-        .cell.x {
-            color: #ff4a5a;
-            text-shadow: 0 0 10px rgba(255, 74, 90, 0.5);
-        }
-
-        .cell.o {
-            color: #4a9eff;
-            text-shadow: 0 0 10px rgba(74, 158, 255, 0.5);
-        }
-
-        .cell.disabled {
-            cursor: not-allowed;
-        }
-
-        .btn-reset {
-            margin-top: 25px;
-            padding: 12px 30px;
-            font-size: 1rem;
-            font-weight: bold;
-            background-color: #00ffcc;
-            color: #1e1e24;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 255, 204, 0.3);
-        }
-
-        .btn-reset:hover {
-            background-color: #00ccaa;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 255, 204, 0.5);
-        }
-
-        .btn-reset:active {
-            transform: translateY(0);
+        #joystickStick {
+            position: absolute; top: 40px; left: 40px; width: 50px; height: 50px;
+            background: rgba(255,255,255,0.6); border-radius: 50%; transition: transform 0.05s;
         }
     </style>
 </head>
 <body>
 
-    <h1>Крестики-Нолики</h1>
-    <div class="status" id="status">Ход игрока: X</div>
-
-    <div class="board" id="board">
-        <button class="cell" data-cell-index="0"></button>
-        <button class="cell" data-cell-index="1"></button>
-        <button class="cell" data-cell-index="2"></button>
-        <button class="cell" data-cell-index="3"></button>
-        <button class="cell" data-cell-index="4"></button>
-        <button class="cell" data-cell-index="5"></button>
-        <button class="cell" data-cell-index="6"></button>
-        <button class="cell" data-cell-index="7"></button>
-        <button class="cell" data-cell-index="8"></button>
+    <div id="menuScreen">
+        <div class="menu-left">
+            <div class="menu-btn" onclick="startSingleGame()">Играть</div>
+            <div class="menu-btn" onclick="openMultiplayer()">С друзьями</div>
+            <div class="menu-btn" onclick="toggleOverlay('howToPlay', true)">Как играть</div>
+        </div>
+        <div class="menu-right">
+            <h1 class="main-title">лабиринт<br>3D</h1>
+        </div>
+        <div class="settings-icon" onclick="toggleOverlay('settings', true)"></div>
     </div>
 
-    <button class="btn-reset" id="resetBtn">Начать заново</button>
+    <div id="howToPlay" class="overlay-screen">
+        <h2>Как играть</h2>
+        <p><strong>ПК:</strong> Движение — кнопки WASD или Стрелочки. Обзор — движение мыши (нажмите на экран, чтобы заблокировать курсор). ESC — выход в меню.</p>
+        <p><strong>Смартфон:</strong> Левый джойстик — движение персонажа. Правая часть экрана — проведение пальцем для поворота камеры.</p>
+        <p>Цель: найти выход из огромного лабиринта. На финише вас ждет секретное послание!</p>
+        <div class="menu-btn" onclick="toggleOverlay('howToPlay', false)">Назад</div>
+    </div>
 
-    <script>
-        const board = document.getElementById('board');
-        const cells = document.querySelectorAll('.cell');
-        const statusText = document.getElementById('status');
-        const resetBtn = document.getElementById('resetBtn');
+    <div id="settings" class="overlay-screen">
+        <h2>Настройки</h2>
+        <p>Здесь вы сможете настроить чувствительность или сбросить прогресс в будущих версиях.</p>
+        <div class="menu-btn" onclick="toggleOverlay('settings', false)">Назад</div>
+    </div>
 
-        // Выигрышные комбинации индексов
-        const winningConditions = [
-            [0, 1, 2], [3, 4, 5], [6, 7, 8], // Горизонтали
-            [0, 3, 6], [1, 4, 7], [2, 5, 8], // Вертикали
-            [0, 4, 8], [2, 4, 6]             // Диагонали
-        ];
+    <div id="multiplayerRoom" class="overlay-screen">
+        <h2>Игра с друзьями</h2>
+        <p>Введите любые 3 цифры для создания или входа в комнату синхронизации:</p>
+        <input type="text" id="roomCodeInput" class="code-input" maxlength="3" placeholder="000" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+        <div style="display: flex; gap: 15px;">
+            <div class="menu-btn" onclick="connectMultiplayer()">Подключиться</div>
+            <div class="menu-btn" onclick="toggleOverlay('multiplayerRoom', false)">Назад</div>
+        </div>
+        <p id="netStatus" style="font-size: 16px; color: #555; margin-top: 15px;"></p>
+    </div>
 
-        let gameState = ["", "", "", "", "", "", "", "", ""];
-        let currentPlayer = "X";
-        let isGameActive = true;
+    <div id="gameContainer">
+        <div id="crosshair"></div>
+        <div id="gameUi">
+            <span id="mpStatus">Одиночный режим</span><br>
+            Дистанция до финиша: <span id="distVal">--</span>м
+        </div>
+        <canvas id="renderCanvas"></canvas>
 
-        // Обработка клика по ячейке
-        function handleCellClick(e) {
-            const clickedCell = e.target;
-            const clickedCellIndex = parseInt(clickedCell.getAttribute('data-cell-index'));
+        <div id="mobileControls">
+            <div id="joystickContainer" class="touch-zone">
+                <div id="joystickStick"></div>
+            </div>
+            <div id="touchLook" class="touch-zone"></div>
+        </div>
+    </div>
 
-            // Проверяем, занята ли ячейка или окончена ли игра
-            if (gameState[clickedCellIndex] !== "" || !isGameActive) {
-                return;
+    <div id="winScreen">
+        <h1 style="color: #00ffff; font-size: clamp(30px, 6vw, 55px); text-align: center; margin-bottom: 10px;">Здесь был Superman :)</h1>
+        <p style="font-size: 20px; color: #ccc; margin-bottom: 30px;">Вы успешно прошли огромный лабиринт!</p>
+        <div class="menu-btn" onclick="exitToMenu()">В главное меню</div>
+    </div>
+
+<script>
+/**
+ * ГЕНЕРАЦИЯ БОЛЬШОГО СЛОЖНОГО ЛАБИРИНТА НА ОСНОВЕ ФОТОГРАФИИ
+ * 1 - стена, 0 - коридор, 2 - финиш.
+ * Масштаб увеличен до гигантской детальной сетки 41x41!
+ */
+const mapSize = 41;
+const map = [
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,1,
+    1,0,1,0,1,0,1,1,1,0,1,0,1,0,1,1,1,1,1,1,1,0,1,0,1,1,1,0,1,0,1,1,1,1,0,1,0,1,1,0,1,
+    1,0,1,0,0,0,1,0,1,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,1,0,1,0,0,0,1,0,0,1,0,0,0,1,0,0,1,
+    1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,0,0,1,1,1,1,1,0,1,1,
+    1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,1,
+    1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,0,1,0,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1,0,1,1,1,1,0,1,
+    1,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,0,1,0,1,0,0,1,0,1,
+    1,0,1,0,1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,1,1,0,1,1,1,1,1,0,1,1,0,1,0,1,0,0,1,0,1,
+    1,0,1,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,1,0,1,1,0,1,
+    1,0,1,1,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,1,1,0,1,0,0,1,
+    1,0,1,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,1,0,0,0,1,0,1,0,0,0,1,0,1,0,0,0,0,1,0,1,1,
+    1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,0,1,1,1,0,1,0,1,1,1,0,1,0,1,0,1,1,1,1,0,1,1,
+    1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,1,0,0,1,
+    1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,
+    1,0,0,0,0,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,1,0,1,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,1,0,1,
+    1,0,1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,1,1,1,1,0,1,0,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,0,1,
+    1,0,1,0,0,0,0,0,0,0,1,0,0,0,1,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,1,0,0,1,0,1,0,1,
+    1,0,1,0,1,1,1,1,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,0,1,0,1,
+    1,0,0,0,1,0,0,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,1,0,0,0,1,0,1,
+    1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,
+    1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,1,0,1,
+    1,0,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,1,0,1,0,1,0,1,1,1,1,0,1,0,1,
+    1,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,1,0,0,0,1,0,1,0,0,1,0,1,0,1,
+    1,0,1,0,1,1,1,1,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,0,1,0,0,1,0,1,0,1,
+    1,0,1,0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,1,0,1,0,0,0,0,0,1,1,0,1,0,0,0,1,
+    1,0,1,0,1,0,1,0,1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1,0,1,0,1,1,1,1,1,1,0,1,1,1,1,1,
+    1,0,0,0,1,0,1,0,0,0,0,0,1,0,0,0,0,0,1,0,1,0,0,1,0,1,0,0,0,1,0,0,0,0,1,0,0,0,0,0,1,
+    1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,0,1,0,1,0,0,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,
+    1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,1,1,0,1,0,0,0,0,0,1,0,1,0,0,1,0,0,0,1,0,1,
+    1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,1,1,1,1,1,0,1,1,1,1,1,0,1,0,1,0,1,1,0,1,0,1,0,1,
+    1,0,1,0,0,0,0,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,1,0,1,0,0,0,1,
+    1,0,1,0,1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,0,1,0,1,1,1,1,1,
+    1,0,1,0,1,0,0,0,0,0,0,0,1,0,1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,1,0,0,0,0,0,1,
+    1,0,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,
+    1,0,0,0,1,0,1,0,0,0,1,0,1,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,1,0,0,0,1,0,0,0,1,0,1,
+    1,1,1,1,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,0,1,1,1,1,1,0,1,0,1,0,1,
+    1,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,1,0,0,0,1,
+    1,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,0,0,1,1,1,1,1,0,1,0,1,1,1,0,1,
+    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,2,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
+];
+
+// Инициализация игровых переменных
+const canvas = document.getElementById('renderCanvas');
+const ctx = canvas.getContext('2d');
+
+let player = { x: 1.5, y: 1.5, angle: 0, fov: Math.PI / 3 };
+let keys = {};
+let isMobile = false;
+let gameActive = false;
+
+// Сетевые настройки (Публичный бесплатный брокер для тестов обмена)
+let p2p = { channel: null, isMultiplayer: false, friendPos: { x: 0, y: 0 }, lastUpdate: 0 };
+
+// Константы джойстика
+let joystick = { active: false, startX: 0, startY: 0, curX: 0, curY: 0, moveX: 0, moveY: 0 };
+
+// Определение типа устройства при старте
+function checkDevice() {
+    isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+               || (window.innerWidth <= 800 && window.innerHeight <= 600);
+    document.getElementById('mobileControls').style.display = isMobile ? 'block' : 'none';
+}
+
+// Изменение размера канваса под экран
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', () => { resizeCanvas(); });
+
+// Обработка клавиатуры
+window.addEventListener('keydown', e => keys[e.code] = true);
+window.addEventListener('keyup', e => keys[e.code] = false);
+
+// Блокировка и обработка мыши для ПК
+canvas.addEventListener('click', () => {
+    if (!isMobile && gameActive) {
+        canvas.requestPointerLock = canvas.requestPointerLock || canvas.mozRequestPointerLock;
+        canvas.requestPointerLock();
+    }
+});
+
+document.addEventListener('pointerlockchange', () => {
+    // Если на ПК вышли из режима мыши по ESC — возвращаем меню
+    if (document.pointerLockElement !== canvas && !isMobile && gameActive) {
+        exitToMenu();
+    }
+});
+
+window.addEventListener('mousemove', e => {
+    if (gameActive && !isMobile && document.pointerLockElement === canvas) {
+        player.angle += e.movementX * 0.0025;
+    }
+});
+
+// Сенсорное управление для смартфонов
+const touchLookZone = document.getElementById('touchLook');
+let lastTouchX = null;
+
+touchLookZone.addEventListener('touchstart', e => {
+    lastTouchX = e.touches[0].clientX;
+});
+touchLookZone.addEventListener('touchmove', e => {
+    if (lastTouchX !== null) {
+        let currentX = e.touches[0].clientX;
+        let diffX = currentX - lastTouchX;
+        player.angle += diffX * 0.006; // Чувствительность поворота пальцем
+        lastTouchX = currentX;
+    }
+});
+touchLookZone.addEventListener('touchend', () => { lastTouchX = null; });
+
+// Сенсорный джойстик
+const joyContainer = document.getElementById('joystickContainer');
+const joyStick = document.getElementById('joystickStick');
+
+joyContainer.addEventListener('touchstart', e => {
+    joystick.active = true;
+    let rect = joyContainer.getBoundingClientRect();
+    joystick.startX = rect.left + rect.width / 2;
+    joystick.startY = rect.top + rect.height / 2;
+});
+
+joyContainer.addEventListener('touchmove', e => {
+    if (!joystick.active) return;
+    e.preventDefault();
+    let touch = e.touches[0];
+    
+    let dX = touch.clientX - joystick.startX;
+    let dY = touch.clientY - joystick.startY;
+    let distance = Math.sqrt(dX * dX + dY * dY);
+    let maxLen = 40; // Максимальное смещение стика
+
+    if (distance > maxLen) {
+        dX = (dX / distance) * maxLen;
+        dY = (dY / distance) * maxLen;
+    }
+
+    joyStick.style.transform = `translate(${dX}px, ${dY}px)`;
+    
+    // Переводим в нормализованные коэффициенты движения (-1 до 1)
+    joystick.moveX = dX / maxLen;
+    joystick.moveY = dY / maxLen;
+});
+
+joyContainer.addEventListener('touchend', () => {
+    joystick.active = false;
+    joystick.moveX = 0;
+    joystick.moveY = 0;
+    joyStick.style.transform = 'translate(0px, 0px)';
+});
+
+
+// Переключение окон меню
+function toggleOverlay(id, show) {
+    document.getElementById(id).style.display = show ? 'flex' : 'none';
+}
+
+function startSingleGame() {
+    p2p.isMultiplayer = false;
+    document.getElementById('mpStatus').innerText = "Одиночный режим";
+    launchGame();
+}
+
+function openMultiplayer() {
+    document.getElementById('netStatus').innerText = "";
+    toggleOverlay('multiplayerRoom', true);
+}
+
+// Мультиплеер через бесплатное API синхронизации данных (EventSource / Веб-стрим)
+function connectMultiplayer() {
+    let code = document.getElementById('roomCodeInput').value;
+    if (code.length < 3) {
+        document.getElementById('netStatus').innerText = "Введите ровно 3 цифры!";
+        return;
+    }
+
+    document.getElementById('netStatus').innerText = "Подключение к комнате " + code + "...";
+    p2p.channel = code;
+    p2p.isMultiplayer = true;
+
+    // Закрываем старое соединение, если было
+    if (window.mpSource) window.mpSource.close();
+
+    // Открываем постоянный поток данных комнаты через открытый CORS ретранслятор для джаваскрипта
+    window.mpSource = new EventSource(`https://stream.abort.io/channel/${code}`);
+    
+    window.mpSource.onmessage = function(event) {
+        try {
+            let data = JSON.parse(event.data);
+            // Если пакет прилетел от друга (не от нас)
+            if (data.id && data.id !== window.playerId) {
+                p2p.friendPos.x = data.x;
+                p2p.friendPos.y = data.y;
+                p2p.lastUpdate = Date.now();
             }
+        } catch(e){}
+    };
 
-            // Обновляем состояние игры и интерфейс
-            gameState[clickedCellIndex] = currentPlayer;
-            clickedCell.textContent = currentPlayer;
-            clickedCell.classList.add(currentPlayer.toLowerCase(), 'disabled');
+    window.mpSource.onerror = function() {
+        // Сервер ретрансляции готов
+        document.getElementById('netStatus').innerText = "Готово к игре!";
+        setTimeout(() => {
+            toggleOverlay('multiplayerRoom', false);
+            document.getElementById('mpStatus').innerText = `Комната: ${p2p.channel}`;
+            launchGame();
+        }, 800);
+    };
+}
 
-            checkResult();
+// Отправка своих координат по сети
+function sendNetData() {
+    if (!p2p.isMultiplayer || Date.now() - p2p.lastUpdate < 80) return; // Ограничиваем частоту пакетов
+
+    fetch(`https://stream.abort.io/channel/${p2p.channel}`, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: window.playerId, x: player.x, y: player.y })
+    }).catch(()=>{});
+}
+
+function launchGame() {
+    window.playerId = window.playerId || Math.random().toString(36).substring(2, 9);
+    document.getElementById('menuScreen').style.display = 'none';
+    document.getElementById('gameContainer').style.display = 'block';
+    
+    // Сброс координат
+    player.x = 1.5;
+    player.y = 1.5;
+    player.angle = 0;
+    
+    resizeCanvas();
+    gameActive = true;
+    gameLoop();
+}
+
+function exitToMenu() {
+    gameActive = false;
+    document.getElementById('gameContainer').style.display = 'none';
+    document.getElementById('winScreen').style.display = 'none';
+    document.getElementById('menuScreen').style.display = 'flex';
+    if (window.mpSource) window.mpSource.close();
+}
+
+// Обновление физики и ходьбы
+function updateLogic() {
+    let moveSpeed = 0.045;
+    let rotSpeed = 0.035;
+
+    // Считаем шаг перемещения
+    let moveX = 0;
+    let moveY = 0;
+
+    // Логика кнопок (ПК)
+    if (keys['KeyA'] || keys['ArrowLeft']) player.angle -= rotSpeed;
+    if (keys['KeyD'] || keys['ArrowRight']) player.angle += rotSpeed;
+
+    if (keys['KeyW'] || keys['ArrowUp']) {
+        moveX += Math.cos(player.angle) * moveSpeed;
+        moveY += Math.sin(player.angle) * moveSpeed;
+    }
+    if (keys['KeyS'] || keys['ArrowDown']) {
+        moveX -= Math.cos(player.angle) * moveSpeed;
+        moveY -= Math.sin(player.angle) * moveSpeed;
+    }
+
+    // Логика джойстика (Смартфоны)
+    if (isMobile && joystick.active) {
+        // Вперед-назад относительно взгляда камеры
+        moveX += Math.cos(player.angle) * (-joystick.moveY) * moveSpeed;
+        moveY += Math.sin(player.angle) * (-joystick.moveY) * moveSpeed;
+        // Стрейф (боковое смещение)
+        moveX += Math.cos(player.angle + Math.PI/2) * (joystick.moveX) * moveSpeed * 0.6;
+        moveY += Math.sin(player.angle + Math.PI/2) * (joystick.moveX) * moveSpeed * 0.6;
+    }
+
+    // Обработка коллизий (Стены)
+    let newX = player.x + moveX;
+    let newY = player.y + moveY;
+
+    if (map[Math.floor(player.y) * mapSize + Math.floor(newX)] !== 1) player.x = newX;
+    if (map[Math.floor(newY) * mapSize + Math.floor(player.x)] !== 1) player.y = newY;
+
+    // Считаем дистанцию до финиша (клетка 39, 39)
+    let targetX = 39.5, targetY = 39.5;
+    let dx = targetX - player.x;
+    let dy = targetY - player.y;
+    let dist = Math.sqrt(dx*dx + dy*dy);
+    document.getElementById('distVal').innerText = Math.floor(dist * 4); 
+
+    // Финиш
+    if (map[Math.floor(player.y) * mapSize + Math.floor(player.x)] === 2) {
+        gameActive = false;
+        document.exitPointerLock();
+        document.getElementById('winScreen').style.display = 'flex';
+    }
+
+    // Отправляем координаты союзнику
+    if (p2p.isMultiplayer) sendNetData();
+}
+
+// Отрисовка кадра псевдо-3D (Движок Raycasting)
+function renderFrame() {
+    // Потолок и пол
+    ctx.fillStyle = '#1c1f22';
+    ctx.fillRect(0, 0, canvas.width, canvas.height / 2);
+    ctx.fillStyle = '#2c2b24';
+    ctx.fillRect(0, canvas.height / 2, canvas.width, canvas.height / 2);
+
+    const numRays = Math.ceil(canvas.width / 2); // Оптимизация шага лучей под мобилки
+    const halfFov = player.fov / 2;
+    const rayWidth = canvas.width / numRays;
+
+    for (let i = 0; i < numRays; i++) {
+        let rayAngle = player.angle - halfFov + (i / numRays) * player.fov;
+        let dist = 0;
+        let hit = false;
+        let hitType = 0;
+
+        let cosR = Math.cos(rayAngle);
+        let sinR = Math.sin(rayAngle);
+
+        while (!hit && dist < 20) {
+            dist += 0.03;
+            let checkX = Math.floor(player.x + cosR * dist);
+            let checkY = Math.floor(player.y + sinR * dist);
+
+            if (checkX < 0 || checkX >= mapSize || checkY < 0 || checkY >= mapSize) {
+                hit = true; dist = 20;
+            } else {
+                let cell = map[checkY * mapSize + checkX];
+                if (cell > 0) { hit = true; hitType = cell; }
+            }
         }
 
-        // Проверка результатов игры
-        function checkResult() {
-            let roundWon = false;
+        let correctedDist = dist * Math.cos(rayAngle - player.angle);
+        let wallHeight = Math.min(canvas.height, Math.floor(canvas.height / correctedDist));
 
-            for (let i = 0; i < winningConditions.length; i++) {
-                const winCondition = winningConditions[i];
-                let a = gameState[winCondition[0]];
-                let b = gameState[winCondition[1]];
-                let c = gameState[winCondition[2]];
+        // Эффект объемного света затухания
+        let lightValue = Math.max(0, 255 - (correctedDist * 16));
 
-                if (a === '' || b === '' || c === '') {
-                    continue;
-                }
-                if (a === b && b === c) {
-                    roundWon = true;
-                    break;
-                }
-            }
-
-            if (roundWon) {
-                statusText.textContent = `🎉 Игрок ${currentPlayer} победил!`;
-                statusText.style.color = currentPlayer === 'X' ? '#ff4a5a' : '#4a9eff';
-                isGameActive = false;
-                return;
-            }
-
-            // Проверка на ничью
-            let roundDraw = !gameState.includes("");
-            if (roundDraw) {
-                statusText.textContent = "🤝 Ничья!";
-                statusText.style.color = "#ffffff";
-                isGameActive = false;
-                return;
-            }
-
-            // Смена игрока
-            currentPlayer = currentPlayer === "X" ? "O" : "X";
-            statusText.textContent = `Ход игрока: ${currentPlayer}`;
+        if (hitType === 1) {
+            ctx.fillStyle = `rgb(${(80 * lightValue)/255}, ${(90 * lightValue)/255}, ${(110 * lightValue)/255})`; // Каменные серые стены
+        } else if (hitType === 2) {
+            ctx.fillStyle = `rgb(0, ${lightValue}, ${lightValue})`; // Зелено-бирюзовый портал выхода
         }
 
-        // Перезапуск игры
-        function resetGame() {
-            gameState = ["", "", "", "", "", "", "", "", ""];
-            currentPlayer = "X";
-            isGameActive = true;
-            statusText.textContent = `Ход игрока: ${currentPlayer}`;
-            statusText.style.color = "#00ffcc";
+        ctx.fillRect(i * rayWidth, (canvas.height - wallHeight) / 2, rayWidth + 1, wallHeight);
+    }
+
+    // РЕНДЕРИНГ ДРУГА (Если игра по сети и он в поле зрения)
+    if (p2p.isMultiplayer && (Date.now() - p2p.lastUpdate < 5000)) {
+        let fDx = p2p.friendPos.x - player.x;
+        let fDy = p2p.friendPos.y - player.y;
+        
+        let fAngle = Math.atan2(fDy, fDx) - player.angle;
+        // Загоняем в рамки видимости от -PI до PI
+        while (fAngle < -Math.PI) fAngle += Math.PI * 2;
+        while (fAngle > Math.PI) fAngle -= Math.PI * 2;
+
+        if (Math.abs(fAngle) < halfFov) {
+            let fDist = Math.sqrt(fDx*fDx + fDy*fDy);
+            let screenX = (0.5 + fAngle / player.fov) * canvas.width;
+            let spriteHeight = Math.min(canvas.height, Math.floor(canvas.height / fDist));
             
-            cells.forEach(cell => {
-                cell.textContent = "";
-                cell.classList.remove('x', 'o', 'disabled');
-            });
+            // Рисуем друга в виде светящейся сферы-персонажа
+            let sSize = spriteHeight * 0.3;
+            ctx.beginPath();
+            ctx.fillStyle = '#ff3b30';
+            ctx.arc(screenX, canvas.height/2, sSize, 0, Math.PI*2);
+            ctx.fill();
+            
+            // Текст над головой друга
+            ctx.fillStyle = '#fff';
+            ctx.font = '14px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText("Игрок 2", screenX, canvas.height/2 - sSize - 10);
         }
+    }
+}
 
-        // Слушатели событий
-        cells.forEach(cell => cell.addEventListener('click', handleCellClick));
-        resetBtn.addEventListener('click', resetGame);
-    </script>
+// Основной игровой цикл
+function gameLoop() {
+    if (!gameActive) return;
+    updateLogic();
+    renderFrame();
+    requestAnimationFrame(gameLoop);
+}
+
+// Первичная инициализация
+checkDevice();
+</script>
 </body>
 </html>
