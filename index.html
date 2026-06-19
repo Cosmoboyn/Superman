@@ -3,61 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Круговой Лабиринт 3D</title>
+    <title>Лабиринт 3D PRO</title>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; touch-action: none; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #b5ae82; font-family: sans-serif; }
         
-        /* Меню по вашему макету прп.png */
+        /* Главное меню строго по вашему макету прп.png */
         #menuScreen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background-color: #b5ae82; display: flex; z-index: 10; padding: 5% 8%;
         }
-        .menu-left { display: flex; flex-direction: column; justify-content: flex-start; gap: 20px; width: 30%; }
-        .menu-right { width: 70%; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        .menu-left { display: flex; flex-direction: column; justify-content: flex-start; gap: 20px; width: 35%; }
+        .menu-right { width: 65%; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
         .menu-btn {
             background-color: #6b7796; color: #000; border: 2px solid #000;
-            padding: 12px; font-size: clamp(16px, 2.5vw, 32px); cursor: pointer; text-align: center;
-            box-shadow: 3px 3px 0px #000; transition: transform 0.1s;
+            padding: 14px; font-size: clamp(16px, 2.2vw, 28px); cursor: pointer; text-align: center;
+            box-shadow: 4px 4px 0px #000; transition: transform 0.05s, box-shadow 0.05s; font-weight: bold;
         }
-        .menu-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0px #000; }
-        .main-title { font-size: clamp(40px, 8vw, 110px); color: #23272a; margin: 0; font-weight: normal; line-height: 1.1; }
+        .menu-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0px #000; }
+        .main-title { font-size: clamp(45px, 7.5vw, 100px); color: #23272a; margin: 0; font-weight: normal; line-height: 1.1; text-transform: lowercase; }
+        
         .settings-icon {
-            position: absolute; bottom: 20px; left: 20px; width: 45px; height: 45px;
+            position: absolute; bottom: 25px; left: 25px; width: 45px; height: 45px;
             background-color: #6b7796; border: 2px solid #000; cursor: pointer;
-            display: flex; justify-content: center; align-items: center;
+            display: flex; justify-content: center; align-items: center; box-shadow: 2px 2px 0px #000;
         }
-        .settings-icon::before { content: ""; width: 23px; height: 23px; border: 4px dashed #000; border-radius: 50%; box-sizing: border-box; }
+        .settings-icon::before { content: ""; width: 22px; height: 22px; border: 4px dashed #000; border-radius: 50%; box-sizing: border-box; }
 
+        /* Окна оверлеев */
         .overlay-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background-color: #b5ae82; z-index: 11; display: none; flex-direction: column;
             justify-content: center; align-items: center; padding: 20px; text-align: center;
         }
-        .overlay-screen h2 { font-size: 36px; margin-bottom: 20px; }
-        .overlay-screen p { font-size: 20px; max-width: 600px; line-height: 1.6; }
-        .code-input { font-size: 32px; letter-spacing: 8px; text-align: center; padding: 10px; width: 180px; border: 2px solid #000; margin: 20px; background: #fff; }
+        .overlay-screen h2 { font-size: 32px; margin-bottom: 20px; color: #23272a; }
+        .overlay-screen p { font-size: 18px; max-width: 55px; line-height: 1.6; color: #23272a; }
+        .code-input { font-size: 32px; letter-spacing: 6px; text-align: center; padding: 10px; width: 200px; border: 2px solid #000; margin: 15px; background: #fff; font-weight: bold; }
+        .net-status { font-size: 18px; color: #23272a; margin-top: 15px; font-weight: bold; min-height: 24px; }
 
         /* Игровой интерфейс */
         #gameContainer { position: relative; width: 100%; height: 100%; display: none; }
-        canvas { display: block; width: 100%; height: 100%; background-color: #000; }
-        #crosshair { position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; background: rgba(255,255,255,0.4); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+        #renderCanvas { display: block; width: 100%; height: 100%; background-color: #000; }
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; background: rgba(255,255,255,0.5); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; }
         
         #gameUi {
-            position: absolute; top: 15px; left: 160px; font-size: clamp(12px, 1.8vw, 18px);
-            color: #fff; text-shadow: 2px 2px #000; pointer-events: none; font-family: monospace; line-height: 1.4;
+            position: absolute; top: 15px; left: 160px; font-size: 16px;
+            color: #fff; text-shadow: 2px 2px 0px #000; pointer-events: none; font-family: monospace; line-height: 1.4; z-index: 7;
         }
         
         #minimap {
             position: absolute; top: 15px; left: 15px; width: 130px; height: 130px;
-            border: 2px solid #fff; background: rgba(0,0,0,0.8); z-index: 6; box-shadow: 0 0 10px #000;
+            border: 2px solid #fff; background: rgba(0,0,0,0.85); z-index: 6; box-shadow: 0 0 10px rgba(0,0,0,0.7);
         }
-
-        .ingame-exit-btn {
-            position: absolute; top: 15px; right: 15px; background: rgba(107, 119, 150, 0.8);
-            color: #000; border: 2px solid #000; padding: 8px 15px; font-size: 14px; cursor: pointer; z-index: 8; font-weight: bold;
-        }
+        .exit-btn { position: absolute; top: 15px; right: 15px; background: #6b7796; color: #000; border: 2px solid #000; padding: 8px 16px; font-size: 14px; cursor: pointer; z-index: 8; font-weight: bold; }
 
         #winScreen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -65,12 +64,12 @@
             flex-direction: column; justify-content: center; align-items: center; color: #fff;
         }
 
-        /* Мобильное управление */
+        /* Идеальное мобильное управление без конфликтов тачей */
         #mobileControls { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none; z-index: 5; }
         .touch-zone { pointer-events: auto; position: absolute; }
-        #touchLook { top: 0; right: 0; width: 65%; height: 100%; }
-        #joystickContainer { bottom: 40px; left: 40px; width: 140px; height: 140px; background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.4); border-radius: 50%; }
-        #joystickStick { position: absolute; top: 45px; left: 45px; width: 50px; height: 50px; background: rgba(255,255,255,0.7); border-radius: 50%; }
+        #touchLook { top: 0; right: 0; width: 55%; height: 100%; }
+        #joystickContainer { bottom: 50px; left: 50px; width: 130px; height: 130px; background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; display: flex; justify-content: center; align-items: center; }
+        #joystickStick { width: 50px; height: 50px; background: rgba(255,255,255,0.6); border-radius: 50%; transition: transform 0.05s linear; }
     </style>
 </head>
 <body>
@@ -88,35 +87,37 @@
     </div>
 
     <div id="howToPlay" class="overlay-screen">
-        <h2>Как играть</h2>
-        <p><strong>ПК:</strong> Ходьба — WASD. Поворот камеры — мышь (кликните на экран для захвата курсора). ESC освобождает мышь.</p>
-        <p><strong>Смартфон:</strong> Левый круг — движение. Правая часть экрана — ведите пальцем для обзора.</p>
-        <div class="menu-btn" onclick="toggleOverlay('howToPlay', false)">Назад</div>
+        <h2>Управление</h2>
+        <p><strong>Компьютер:</strong> Ходьба — WASD или стрелки. Поворот камеры — мышь (кликните по экрану для захвата). Клавиша ESC освобождает курсор.</p>
+        <p><strong>Смартфон:</strong> Левый джойстик — передвижение. Правая половина экрана — ведите пальцем в любую сторону для обзора.</p>
+        <div class="menu-btn" style="margin-top: 20px;" onclick="toggleOverlay('howToPlay', false)">Назад</div>
     </div>
 
     <div id="settings" class="overlay-screen">
         <h2>Настройки</h2>
-        <p>Управление адаптировано под ваше устройство автоматически.</p>
-        <div class="menu-btn" onclick="toggleOverlay('settings', false)">Назад</div>
+        <p>Система адаптации автоматически настроила интерфейс под ваше устройство.</p>
+        <div class="menu-btn" style="margin-top: 20px;" onclick="toggleOverlay('settings', false)">Назад</div>
     </div>
 
     <div id="multiplayerRoom" class="overlay-screen">
-        <h2>Игра с друзьями</h2>
-        <p>Придумайте любые 3 цифры и введите их вместе с другом:</p>
-        <input type="text" id="roomCodeInput" class="code-input" maxlength="3" placeholder="123" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
-        <div style="display: flex; gap: 15px;">
-            <div class="menu-btn" onclick="initP2PConnection()">Подключиться</div>
-            <div class="menu-btn" onclick="toggleOverlay('multiplayerRoom', false)">Назад</div>
+        <h2>Мультиплеер (P2P)</h2>
+        <p>Придумайте и введите любые 3 цифры комнаты:</p>
+        <input type="text" id="roomCodeInput" class="code-input" maxlength="3" placeholder="777" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+        
+        <div style="display: flex; gap: 15px; margin-top: 10px;">
+            <div class="menu-btn" onclick="initP2PConnection(true)">Создать как Хост</div>
+            <div class="menu-btn" onclick="initP2PConnection(false)">Войти как Гость</div>
         </div>
-        <p id="netStatus" style="font-size: 18px; color: #111; margin-top: 15px; font-weight: bold;"></p>
+        <div class="menu-btn" style="margin-top: 20px; width: 160px;" onclick="toggleOverlay('multiplayerRoom', false)">Назад</div>
+        <div id="netStatus" class="net-status"></div>
     </div>
 
     <div id="gameContainer">
         <canvas id="minimap" width="130" height="130"></canvas>
-        <button class="ingame-exit-btn" onclick="exitToMenu()">Выйти в меню</button>
+        <button class="exit-btn" onclick="exitToMenu()">Выйти</button>
         <div id="crosshair"></div>
         <div id="gameUi">
-            <span id="mpStatus" style="color: #00ffff;">Одиночный режим</span><br>
+            <span id="mpStatus" style="color: #00ffff; font-weight: bold;">Одиночный режим</span><br>
             До выхода: <span id="distVal">--</span>м
         </div>
         <canvas id="renderCanvas"></canvas>
@@ -130,56 +131,36 @@
     </div>
 
     <div id="winScreen">
-        <h1 style="color: #00ffff; font-size: clamp(30px, 6vw, 55px); text-align: center;">Здесь был Superman :)</h1>
-        <p style="font-size: 20px; color: #ccc; margin-bottom: 30px;">Вы прошли круговой лабиринт!</p>
+        <h1 style="color: #00ffff; font-size: 48px; margin-bottom: 10px;">Победа!</h1>
+        <p style="font-size: 20px; color: #ccc; margin-bottom: 30px;">Лабиринт успешно пройден.</p>
         <div class="menu-btn" onclick="exitToMenu()">В главное меню</div>
     </div>
 
 <script>
-// ЦИФРОВАЯ МАТРИЦА СТЕН ПО ФОТОГРАФИИ КРУГОВОГО ЛАБИРИНТА (лаб.jpg)
-// Спавн игроков — строго в центре (20, 20). Выход — на внешнем кольце.
-const mapSize = 41;
+// ТОЧНАЯ ПРЯМОУГОЛЬНАЯ КАРТА ЛАБИРИНТА ИЗ ФАЙЛА «лаб.jpg»
+// 1 - Стена, 0 - Путь, 2 - Финишная зона
+const mapWidth = 19;
+const mapHeight = 19;
 const map = [
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-    1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,
-    1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,
-    1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,
-    1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,
-    1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,
-    1,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1,
-    1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,
-    1,0,1,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0,1,
-    1,0,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,0,1,
-    1,0,1,0,1,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0,1,0,1,
-    1,0,1,0,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,0,1,0,1,
-    1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
-    1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1,1,1,1,1,0,1,1,1,1,1,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
-    1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,0,0,1,0,1,0,0,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
-    1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1,0,1,0,1,0,1,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
-    1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
-    1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1,1,1,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
-    1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,0,1,0,1,0,0,0,1,0,1,0,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,0,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-    1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,0,1,0,1,1,1,1,1,0,1,0,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
-    1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
-    1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1,1,1,0,1,1,1,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
-    1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,0,0,1,0,1,0,0,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
-    1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1,1,1,0,1,0,1,0,1,1,1,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
-    1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
-    1,0,1,0,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,0,1,0,1,
-    1,0,1,0,1,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0,1,0,1,
-    1,0,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,0,1,
-    1,0,1,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0,1,
-    1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,
-    1,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1,
-    1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,0,1,
-    1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,
-    1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,
-    1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,
-    1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,1,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0,1,
+    1,0,1,0,1,0,1,1,1,0,1,0,1,0,1,0,1,0,1,
+    1,0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,1,
+    1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,0,1,
+    1,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,1,0,1,
+    1,1,1,1,1,0,1,0,1,0,1,1,1,1,1,0,1,0,1,
+    1,0,0,0,1,0,0,0,1,0,1,0,0,0,1,0,1,0,1,
+    1,0,1,0,1,1,1,1,1,0,1,0,1,0,1,0,1,0,1,
+    1,0,1,0,0,0,0,0,0,0,1,0,1,0,0,0,1,0,1,
+    1,0,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,0,1,
+    1,0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1,
+    1,0,1,0,1,0,1,0,1,1,1,1,1,0,1,1,1,1,1,
+    1,0,0,0,1,0,1,0,1,0,0,0,1,0,1,0,0,0,1,
+    1,1,1,1,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
+    1,0,0,0,0,0,1,0,0,0,1,0,0,0,1,0,1,0,1,
+    1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,
+    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,2,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
 ];
 
 const canvas = document.getElementById('renderCanvas');
@@ -187,19 +168,23 @@ const ctx = canvas.getContext('2d');
 const minimapCanvas = document.getElementById('minimap');
 const mCtx = minimapCanvas.getContext('2d');
 
-// Старт в центре лабиринта
-let player = { x: 20.5, y: 20.5, angle: 0, fov: Math.PI / 3, radius: 0.28 };
+// Игрок всегда стартует строго в верхнем левом углу прохода (1.5, 1.5)
+let player = { x: 1.5, y: 1.5, angle: 0, fov: Math.PI / 3, radius: 0.22 };
 let keys = {};
 let isMobile = false;
 let gameActive = false;
 
-// Сетевые переменные PeerJS
+// Сетевые параметры PeerJS
 let peer = null;
 let conn = null;
-let isHost = false;
-let friend = { x: 0, y: 0, active: false };
+let isHostRole = false;
+let friend = { x: 0, y: 0, angle: 0, active: false };
 
+// Координаты джойстика
 let joystick = { active: false, startX: 0, startY: 0, moveX: 0, moveY: 0 };
+let joyPointerId = null;
+let lookPointerId = null;
+let lastLookX = 0;
 
 function checkDevice() {
     isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
@@ -213,11 +198,11 @@ function resizeCanvas() {
 }
 window.addEventListener('resize', resizeCanvas);
 
-// Кнопки клавиатуры
+// Клавиатура ПК
 window.addEventListener('keydown', e => { if(gameActive) keys[e.code] = true; });
 window.addEventListener('keyup', e => { if(gameActive) keys[e.code] = false; });
 
-// Мышь ПК
+// Блокировка курсора мыши на ПК
 canvas.addEventListener('click', () => {
     if (!isMobile && gameActive) {
         canvas.requestPointerLock = canvas.requestPointerLock || canvas.mozRequestPointerLock;
@@ -230,122 +215,130 @@ window.addEventListener('mousemove', e => {
     }
 });
 
-// Мобильный обзор (Правая часть экрана)
-const touchLookZone = document.getElementById('touchLook');
-let lastTouchX = null;
-touchLookZone.addEventListener('touchstart', e => { lastTouchX = e.touches[0].clientX; });
-touchLookZone.addEventListener('touchmove', e => {
-    if (lastTouchX !== null) {
-        let currentX = e.touches[0].clientX;
-        player.angle += (currentX - lastTouchX) * 0.008;
-        lastTouchX = currentX;
-    }
-});
-touchLookZone.addEventListener('touchend', () => { lastTouchX = null; });
-
-// Мобильный фиксированный джойстик (Левая часть экрана)
+// НАДЕЖНОЕ МОБИЛЬНОЕ УПРАВЛЕНИЕ ЧЕРЕЗ POINTER EVENTS (БЕЗ КОНФЛИКТОВ ТАЧЕЙ)
 const joyContainer = document.getElementById('joystickContainer');
 const joyStick = document.getElementById('joystickStick');
-joyContainer.addEventListener('touchstart', e => {
+const touchLookZone = document.getElementById('touchLook');
+
+joyContainer.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    joyPointerId = e.pointerId;
     joystick.active = true;
     let rect = joyContainer.getBoundingClientRect();
     joystick.startX = rect.left + rect.width / 2;
     joystick.startY = rect.top + rect.height / 2;
 });
-joyContainer.addEventListener('touchmove', e => {
-    if (!joystick.active) return;
-    let touch = e.touches[0];
-    let dX = touch.clientX - joystick.startX;
-    let dY = touch.clientY - joystick.startY;
-    let distance = Math.sqrt(dX * dX + dY * dY);
-    let maxLen = 45;
-    if (distance > maxLen) { dX = (dX / distance) * maxLen; dY = (dY / distance) * maxLen; }
-    joyStick.style.transform = `translate(${dX}px, ${dY}px)`;
-    joystick.moveX = dX / maxLen; joystick.moveY = dY / maxLen;
+
+touchLookZone.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    lookPointerId = e.pointerId;
+    lastLookX = e.clientX;
 });
-joyContainer.addEventListener('touchend', () => {
-    joystick.active = false; joystick.moveX = 0; joystick.moveY = 0;
-    joyStick.style.transform = 'translate(0px, 0px)';
+
+window.addEventListener('pointermove', e => {
+    if (joystick.active && e.pointerId === joyPointerId) {
+        let dX = e.clientX - joystick.startX;
+        let dY = e.clientY - joystick.startY;
+        let distance = Math.sqrt(dX * dX + dY * dY);
+        let maxLen = 40;
+        if (distance > maxLen) { dX = (dX / distance) * maxLen; dY = (dY / distance) * maxLen; }
+        joyStick.style.transform = `translate(${dX}px, ${dY}px)`;
+        joystick.moveX = dX / maxLen; 
+        joystick.moveY = dY / maxLen;
+    }
+    if (gameActive && e.pointerId === lookPointerId) {
+        let dx = e.clientX - lastLookX;
+        player.angle += dx * 0.006;
+        lastLookX = e.clientX;
+    }
 });
+
+const handlePointerUp = e => {
+    if (e.pointerId === joyPointerId) {
+        joystick.active = false; joystick.moveX = 0; joystick.moveY = 0;
+        joyStick.style.transform = 'translate(0px, 0px)';
+        joyPointerId = null;
+    }
+    if (e.pointerId === lookPointerId) {
+        lookPointerId = null;
+    }
+};
+window.addEventListener('pointerup', handlePointerUp);
+window.addEventListener('pointercancel', handlePointerUp);
 
 function toggleOverlay(id, show) { document.getElementById(id).style.display = show ? 'flex' : 'none'; }
 function startSingleGame() { friend.active = false; document.getElementById('mpStatus').innerText = "Одиночный режим"; launchGame(); }
 function openMultiplayer() { document.getElementById('netStatus').innerText = ""; toggleOverlay('multiplayerRoom', true); }
 
-// Инициализация P2P сети через PeerJS по вашему 3-значному коду
-function initP2PConnection() {
+// Инициализация P2P соединения с жестким разделением ролей
+function initP2PConnection(asHost) {
     let code = document.getElementById('roomCodeInput').value;
     if (code.length < 3) { document.getElementById('netStatus').innerText = "Введите 3 цифры!"; return; }
     
-    document.getElementById('netStatus').innerText = "Создание линии связи...";
+    document.getElementById('netStatus').innerText = asHost ? "Регистрация хоста в сети..." : "Поиск хоста в сети...";
+    isHostRole = asHost;
     
-    // Создаем уникальные ID для Хоста и Гостя на основе кода комнаты
-    let hostId = "maze-host-" + code;
-    let guestId = "maze-guest-" + code;
+    let hostPeerId = "maze-3d-id-host-" + code;
+    let guestPeerId = "maze-3d-id-guest-" + code;
 
     if (peer) peer.destroy();
+    
+    // Создаем подключение с конкретным ID в зависимости от выбранной роли
+    peer = new Peer(asHost ? hostPeerId : guestPeerId);
 
-    // Подключаемся к публичному облаку PeerJS (бесплатно и стабильно)
-    peer = new Peer(hostId);
-
-    peer.on('open', (id) => {
-        document.getElementById('netStatus').innerText = "Ожидание друга в комнате...";
-        isHost = true;
-        
-        // Пробуем сами подключиться как гость, если хост уже создан кем-то другим
-        let probePeer = new Peer(guestId);
-        probePeer.on('open', () => {
-            let connection = probePeer.connect(hostId);
+    peer.on('open', () => {
+        if (asHost) {
+            document.getElementById('netStatus').innerText = "Комната создана! Ждем друга...";
+        } else {
+            // Если мы гость — напрямую инициируем коннект к хосту
+            let connection = peer.connect(hostPeerId);
             connection.on('open', () => {
-                isHost = false;
                 conn = connection;
-                setupDataChannels();
+                handleConnectedState();
             });
-        });
+        }
     });
 
     peer.on('connection', (connection) => {
-        if (isHost) {
+        if (isHostRole) {
             conn = connection;
-            setupDataChannels();
+            handleConnectedState();
         }
     });
 
     peer.on('error', (err) => {
-        // Если ID хоста занят, значит мы входим как второй игрок (Гость)
+        console.error(err);
         if (err.type === 'unavailable-id') {
-            peer = new Peer(guestId);
-            peer.on('open', () => {
-                conn = peer.connect(hostId);
-                conn.on('open', () => {
-                    isHost = false;
-                    setupDataChannels();
-                });
-            });
+            document.getElementById('netStatus').innerText = "Этот код уже занят кем-то!";
+        } else {
+            document.getElementById('netStatus').innerText = "Ошибка сети. Попробуйте другой код.";
         }
     });
 }
 
-function setupDataChannels() {
-    document.getElementById('netStatus').innerText = "Игрок подключился!";
+function handleConnectedState() {
+    document.getElementById('netStatus').innerText = "Успешное сопряжение игроков!";
     friend.active = true;
     setTimeout(() => {
         toggleOverlay('multiplayerRoom', false);
-        document.getElementById('mpStatus').innerText = isHost ? "Вы: Создатель" : "Вы: Гость";
+        document.getElementById('mpStatus').innerText = isHostRole ? "Режим: Вы ХОСТ" : "Режим: Вы ГОСТЬ";
         launchGame();
-    }, 600);
+    }, 400);
 
     conn.on('data', (data) => {
-        // Получаем чистые данные без цикличных багов обратной связи
-        friend.x = data.x;
-        friend.y = data.y;
+        // Данные напарника пишутся строго в объект friend, не ломая позицию самого игрока
+        if (data && typeof data.x === 'number') {
+            friend.x = data.x;
+            friend.y = data.y;
+            friend.angle = data.angle;
+        }
     });
 }
 
 function launchGame() {
     document.getElementById('menuScreen').style.display = 'none';
     document.getElementById('gameContainer').style.display = 'block';
-    player.x = 20.5; player.y = 20.5; player.angle = 0; keys = {};
+    player.x = 1.5; player.y = 1.5; player.angle = 0; keys = {};
     resizeCanvas();
     gameActive = true;
     lastTime = performance.now();
@@ -358,23 +351,22 @@ function exitToMenu() {
     document.getElementById('gameContainer').style.display = 'none';
     document.getElementById('winScreen').style.display = 'none';
     document.getElementById('menuScreen').style.display = 'flex';
-    if (conn) conn.close();
-    if (peer) peer.destroy();
+    if (conn) { conn.close(); conn = null; }
+    if (peer) { peer.destroy(); peer = null; }
 }
 
-// Защита от прохождения сквозь стены
-function isColliding(posX, posY) {
-    let b = player.radius;
-    // Сканируем углы физического хитбокса игрока
-    let checkPoints = [
-        {x: posX - b, y: posY - b}, {x: posX + b, y: posY - b},
-        {x: posX - b, y: posY + b}, {x: posX + b, y: posY + b}
+// Плавная коллизия со скольжением вдоль стен
+function checkWallCollision(posX, posY) {
+    let r = player.radius;
+    let points = [
+        {x: posX - r, y: posY - r}, {x: posX + r, y: posY - r},
+        {x: posX - r, y: posY + r}, {x: posX + r, y: posY + r}
     ];
-    for (let p of checkPoints) {
+    for (let p of points) {
         let gx = Math.floor(p.x);
         let gy = Math.floor(p.y);
-        if (gx < 0 || gx >= mapSize || gy < 0 || gy >= mapSize) return true;
-        if (map[gy * mapSize + gx] === 1) return true;
+        if (gx < 0 || gx >= mapWidth || gy < 0 || gy >= mapHeight) return true;
+        if (map[gy * mapWidth + gx] === 1) return true;
     }
     return false;
 }
@@ -382,11 +374,11 @@ function isColliding(posX, posY) {
 let lastTime = performance.now();
 function updateLogic() {
     let now = performance.now();
-    let dt = Math.min((now - lastTime) / 1000, 0.1); // Нормализация скорости (Delta Time)
+    let dt = Math.min((now - lastTime) / 1000, 0.1); 
     lastTime = now;
 
-    let moveSpeed = 3.8 * dt; 
-    let rotSpeed = 2.4 * dt;
+    let moveSpeed = 4.2 * dt; 
+    let rotSpeed = 2.6 * dt;
 
     if (keys['KeyA'] || keys['ArrowLeft']) player.angle -= rotSpeed;
     if (keys['KeyD'] || keys['ArrowRight']) player.angle += rotSpeed;
@@ -395,80 +387,122 @@ function updateLogic() {
     if (keys['KeyW'] || keys['ArrowUp']) { moveX += Math.cos(player.angle); moveY += Math.sin(player.angle); }
     if (keys['KeyS'] || keys['ArrowDown']) { moveX -= Math.cos(player.angle); moveY -= Math.sin(player.angle); }
 
-    // Расчет джойстика смартфонов
+    // Логика джойстика
     if (isMobile && joystick.active) {
         moveX += Math.cos(player.angle) * (-joystick.moveY); moveY += Math.sin(player.angle) * (-joystick.moveY);
         moveX += Math.cos(player.angle + Math.PI/2) * joystick.moveX * 0.7; moveY += Math.sin(player.angle + Math.PI/2) * joystick.moveX * 0.7;
     }
 
-    // Скольжение вдоль стен
     if (moveX !== 0 || moveY !== 0) {
-        let len = Math.sqrt(moveX*moveX + moveY*moveY);
-        let nextX = player.x + (moveX / len) * moveSpeed;
-        let nextY = player.y + (moveY / len) * moveSpeed;
+        let length = Math.sqrt(moveX*moveX + moveY*moveY);
+        let stepX = (moveX / length) * moveSpeed;
+        let stepY = (moveY / length) * moveSpeed;
 
-        if (!isColliding(nextX, player.y)) player.x = nextX;
-        if (!isColliding(player.x, nextY)) player.y = nextY;
+        // Покомпонентная проверка для идеального скольжения по углам
+        if (!checkWallCollision(player.x + stepX, player.y)) player.x += stepX;
+        if (!checkWallCollision(player.x, player.y + stepY)) player.y += stepY;
     }
 
-    // Дистанция до выхода (клетка 39, 39)
-    let dist = Math.sqrt((39.5 - player.x)**2 + (39.5 - player.y)**2);
-    document.getElementById('distVal').innerText = Math.floor(dist * 3);
+    // Расстояние до триггера победы (17.5, 17.5)
+    let dist = Math.sqrt((17.5 - player.x)**2 + (17.5 - player.y)**2);
+    document.getElementById('distVal').innerText = Math.floor(dist * 2);
 
-    if (map[Math.floor(player.y) * mapSize + Math.floor(player.x)] === 2) {
+    if (map[Math.floor(player.y) * mapWidth + Math.floor(player.x)] === 2) {
         gameActive = false;
         document.getElementById('winScreen').style.display = 'flex';
     }
 
-    // Отправка координат напрямую другу
+    // Отправка координат только при установленной связи
     if (friend.active && conn && conn.open) {
-        conn.send({ x: player.x, y: player.y });
+        conn.send({ x: player.x, y: player.y, angle: player.angle });
     }
 }
 
 function drawFrame() {
-    // Небо и Земля
+    // Небо и Пол
     ctx.fillStyle = '#1c1f22'; ctx.fillRect(0, 0, canvas.width, canvas.height / 2);
     ctx.fillStyle = '#2c2b24'; ctx.fillRect(0, canvas.height / 2, canvas.width, canvas.height / 2);
 
-    const numRays = Math.ceil(canvas.width / 2); 
+    const screenWidth = canvas.width;
     const halfFov = player.fov / 2;
-    const rayWidth = canvas.width / numRays;
 
-    for (let i = 0; i < numRays; i++) {
-        let rayAngle = player.angle - halfFov + (i / numRays) * player.fov;
-        let dist = 0; let hit = false; let hitType = 0;
-        let cosR = Math.cos(rayAngle), sinR = Math.sin(rayAngle);
+    // ВЫСОКОТОЧНЫЙ DDA РЕЙКАСТИНГ (КАК В WOLFENSTEIN 3D)
+    for (let x = 0; x < screenWidth; x++) {
+        let rayAngle = player.angle - halfFov + (x / screenWidth) * player.fov;
+        let rayX = Math.cos(rayAngle);
+        let rayY = Math.sin(rayAngle);
 
-        while (!hit && dist < 25) {
-            dist += 0.05;
-            let cx = Math.floor(player.x + cosR * dist);
-            let cy = Math.floor(player.y + sinR * dist);
-            if (cx < 0 || cx >= mapSize || cy < 0 || cy >= mapSize) { hit = true; dist = 25; }
-            else { let cell = map[cy * mapSize + cx]; if (cell > 0) { hit = true; hitType = cell; } }
+        let mapX = Math.floor(player.x);
+        let mapY = Math.floor(player.y);
+
+        let deltaDistX = Math.abs(1 / rayX);
+        let deltaDistY = Math.abs(1 / rayY);
+
+        let sideDistX, sideDistY;
+        let stepX, stepY;
+
+        if (rayX < 0) { stepX = -1; sideDistX = (player.x - mapX) * deltaDistX; } 
+        else { stepX = 1; sideDistX = (mapX + 1.0 - player.x) * deltaDistX; }
+        if (rayY < 0) { stepY = -1; sideDistY = (player.y - mapY) * deltaDistY; } 
+        else { stepY = 1; sideDistY = (mapY + 1.0 - player.y) * deltaDistY; }
+
+        let hit = 0;
+        let side = 0; // 0 - Вертикальная грань, 1 - Горизонтальная
+
+        while (hit === 0) {
+            if (sideDistX < sideDistY) { sideDistX += deltaDistX; mapX += stepX; side = 0; } 
+            else { sideDistY += deltaDistY; mapY += stepY; side = 1; }
+            
+            if (mapX < 0 || mapX >= mapWidth || mapY < 0 || mapY >= mapHeight) break;
+            if (map[mapY * mapWidth + mapX] > 0) hit = map[mapY * mapWidth + mapX];
         }
 
-        let correctedDist = dist * Math.cos(rayAngle - player.angle);
-        let wallHeight = Math.min(canvas.height, Math.floor(canvas.height / correctedDist));
-        let light = Math.max(0, 255 - (correctedDist * 12));
+        let perpWallDist;
+        if (side === 0) perpWallDist = (mapX - player.x + (1 - stepX) / 2) / rayX;
+        else           perpWallDist = (mapY - player.y + (1 - stepY) / 2) / rayY;
 
-        if (hitType === 1) ctx.fillStyle = `rgb(${(70 * light)/255}, ${(80 * light)/255}, ${(95 * light)/255})`;
-        else if (hitType === 2) ctx.fillStyle = `rgb(0, ${light}, ${light})`;
+        if (perpWallDist <= 0) perpWallDist = 0.01;
 
-        ctx.fillRect(i * rayWidth, (canvas.height - wallHeight) / 2, rayWidth + 1, wallHeight);
+        let wallHeight = Math.min(canvas.height, Math.floor(canvas.height / perpWallDist));
+        
+        // Настройка цветов: Стена (Серо-синяя) или Финиш (Бирюзовый)
+        let baseColor = (hit === 2) ? [0, 200, 200] : [80, 92, 108];
+        
+        // Реалистичное затенение по удаленности + разделение граней (3D Объем)
+        let shade = Math.max(0.15, 1 - (perpWallDist / 13));
+        if (side === 1) shade *= 0.65; // Боковые стены темнее фронтальных
+
+        let r = Math.floor(baseColor[0] * shade);
+        let g = Math.floor(baseColor[1] * shade);
+        let b = Math.floor(baseColor[2] * shade);
+
+        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+        ctx.fillRect(x, (canvas.height - wallHeight) / 2, 1, wallHeight);
     }
 
-    // Отрендерить друга (Игрока 2), если он рядом
+    // КОРРЕКТНЫЙ 3D-РЕНДЕР НАПАРНИКА ЧЕРЕЗ МАТРИЧНУЮ ПРОЕКЦИЮ
     if (friend.active) {
-        let fDx = friend.x - player.x; let fDy = friend.y - player.y;
-        let fAngle = Math.atan2(fDy, fDx) - player.angle;
-        while (fAngle < -Math.PI) fAngle += Math.PI * 2; while (fAngle > Math.PI) fAngle -= Math.PI * 2;
-        if (Math.abs(fAngle) < halfFov) {
-            let fDist = Math.sqrt(fDx*fDx + fDy*fDy);
-            let screenX = (0.5 + fAngle / player.fov) * canvas.width;
-            let sSize = Math.min(canvas.height, Math.floor(canvas.height / fDist)) * 0.25;
-            ctx.beginPath(); ctx.fillStyle = '#ff3b30'; ctx.arc(screenX, canvas.height/2, sSize, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = '#fff'; ctx.font = '14px monospace'; ctx.textAlign = 'center'; ctx.fillText("Друг", screenX, canvas.height/2 - sSize - 10);
+        let fDx = friend.x - player.x;
+        let fDy = friend.y - player.y;
+
+        // Трансформируем позицию друга относительно угла камеры игрока
+        let transX = fDx * Math.cos(-player.angle) - fDy * Math.sin(-player.angle);
+        let transY = fDx * Math.sin(-player.angle) + fDy * Math.cos(-player.angle); 
+
+        if (transY > 0.1) { // Если друг находится перед камерой
+            let spriteScreenX = (canvas.width / 2) * (1 + transX / (transY * Math.tan(player.fov / 2)));
+            let spriteHeight = Math.min(canvas.height, Math.floor(canvas.height / transY));
+            let spriteWidth = spriteHeight * 0.45;
+
+            // Рисуем аватар друга
+            ctx.fillStyle = '#ff3b30';
+            ctx.fillRect(spriteScreenX - spriteWidth / 2, (canvas.height - spriteHeight) / 2, spriteWidth, spriteHeight);
+
+            // Текст над головой
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 15px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText("Друг", spriteScreenX, (canvas.height - spriteHeight) / 2 - 12);
         }
     }
 
@@ -477,38 +511,36 @@ function drawFrame() {
 
 function drawMinimap() {
     mCtx.clearRect(0, 0, minimapCanvas.width, minimapCanvas.height);
-    let viewSize = 11; 
-    let cellSize = minimapCanvas.width / viewSize;
-    let startX = player.x - viewSize / 2;
-    let startY = player.y - viewSize / 2;
+    let viewGrid = 9; 
+    let cellSize = minimapCanvas.width / viewGrid;
+    let startX = player.x - viewGrid / 2;
+    let startY = player.y - viewGrid / 2;
 
-    for (let y = 0; y < viewSize; y++) {
-        for (let x = 0; x < viewSize; x++) {
-            let mapX = Math.floor(startX + x);
-            let mapY = Math.floor(startY + y);
-            if (mapX >= 0 && mapX < mapSize && mapY >= 0 && mapY < mapSize) {
-                let cell = map[mapY * mapSize + mapX];
-                if (cell === 1) { mCtx.fillStyle = '#444b52'; mCtx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize); } 
+    for (let y = 0; y < viewGrid; y++) {
+        for (let x = 0; x < viewGrid; x++) {
+            let mX = Math.floor(startX + x);
+            let mY = Math.floor(startY + y);
+            if (mX >= 0 && mX < mapWidth && mY >= 0 && mY < mapHeight) {
+                let cell = map[mY * mapWidth + mX];
+                if (cell === 1) { mCtx.fillStyle = '#444b52'; mCtx.fillRect(x * cellSize, y * cellSize, cellSize - 0.5, cellSize - 0.5); } 
                 else if (cell === 2) { mCtx.fillStyle = '#00ffff'; mCtx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize); }
             }
         }
     }
 
-    // Вы (Синяя точка с лучом взгляда)
-    let pCenterX = (player.x - startX) * cellSize;
-    let pCenterY = (player.y - startY) * cellSize;
-    mCtx.strokeStyle = '#007aff'; mCtx.lineWidth = 2;
-    mCtx.beginPath(); mCtx.moveTo(pCenterX, pCenterY);
-    mCtx.lineTo(pCenterX + Math.cos(player.angle) * 12, pCenterY + Math.sin(player.angle) * 12);
-    mCtx.stroke();
-    mCtx.beginPath(); mCtx.fillStyle = '#007aff'; mCtx.arc(pCenterX, pCenterY, 5, 0, Math.PI * 2); mCtx.fill();
+    // Вы (Локальный маркер + вектор направления)
+    let pX = (player.x - startX) * cellSize; 
+    let pY = (player.y - startY) * cellSize;
+    mCtx.strokeStyle = '#007aff'; mCtx.lineWidth = 2.5;
+    mCtx.beginPath(); mCtx.moveTo(pX, pY); mCtx.lineTo(pX + Math.cos(player.angle)*11, pY + Math.sin(player.angle)*11); mCtx.stroke();
+    mCtx.beginPath(); mCtx.fillStyle = '#007aff'; mCtx.arc(pX, pY, 4.5, 0, Math.PI * 2); mCtx.fill();
 
-    // Друг на мини-карте (Красная точка)
+    // Друг на мини-карте (Красный маркер)
     if (friend.active) {
-        let fCenterX = (friend.x - startX) * cellSize;
-        let fCenterY = (friend.y - startY) * cellSize;
-        if (fCenterX >= 0 && fCenterX <= minimapCanvas.width && fCenterY >= 0 && fCenterY <= minimapCanvas.height) {
-            mCtx.beginPath(); mCtx.fillStyle = '#ff3b30'; mCtx.arc(fCenterX, fCenterY, 4, 0, Math.PI * 2); mCtx.fill();
+        let fX = (friend.x - startX) * cellSize; 
+        let fY = (friend.y - startY) * cellSize;
+        if (fX >= 0 && fX <= minimapCanvas.width && fY >= 0 && fY <= minimapCanvas.height) {
+            mCtx.beginPath(); mCtx.fillStyle = '#ff3b30'; mCtx.arc(fX, fY, 4, 0, Math.PI * 2); mCtx.fill();
         }
     }
 }
